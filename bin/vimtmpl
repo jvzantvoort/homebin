@@ -1,0 +1,158 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#------------------------------------------------------------------------------#
+#                                    vimtmpl                                   #
+#------------------------------------------------------------------------------#
+"""vimtmpl, short description of script.
+
+This module demonstrates documentation as specified by the `Google Python
+Style Guide`_. Docstrings may extend over multiple lines. Sections are
+created with a section header and a colon followed by a block of indented
+text.
+
+Example:
+   vimtmpl
+
+Section breaks are created by simply resuming unindented text. Section
+breaks are also implicitly created anytime a new section starts."""
+
+__author__ = "John van Zantvoort"
+__date__ = "21-Jun-2016"
+
+__license__ = "MIT"
+__version__ = "1.0.1"
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+
+import sys
+import os
+import string
+from time import localtime, gmtime, strftime
+import argparse
+import pwd
+import pprint
+import re
+import ConfigParser
+
+class TemplateWorker(object):
+
+    def __init__(self, executable):
+        self.dirname = 'vimtmpl'
+        self.dirnames = [os.path.join(os.path.abspath(x)) for x in sys.path]
+        self.dirnames = [os.path.expanduser('~/.vimtmpl')] + self.dirnames
+        self.executable = executable
+
+    def tmpl_path(self, dirn):
+        return os.path.join(dirn, self.executable + ".template")
+
+    def has_template(self, dirn):
+        if os.path.exists(self.tmpl_path(dirn)):
+            return True
+        return False
+
+    def get_template(self):
+        for x in self.dirnames:
+            if self.has_template(x):
+                return string.Template(open(self.tmpl_path(x)).read())
+
+    def __call__(self, **kwargs):
+        data = self.get_template()
+        info = dict()
+        for k, v in kwargs.iteritems():
+            info[k] = v
+        info['date'] = strftime('%d-%b-%Y',localtime())
+        info['year'] = strftime('%Y',localtime())
+        info['user'] = pwd.getpwuid(os.getuid()).pw_gecos
+        info['username'] = pwd.getpwuid(os.getuid()).pw_name
+        try:
+            scripttext = data.safe_substitute(info)
+        except AttributeError:
+            scripttext = 'Error: have no template data for {0}'.format(self.executable)
+        return scripttext
+
+def parse_args(args):
+    """
+    Parse command line parameters
+
+    :param args: command line parameters as list of strings
+    :return: command line parameters as :obj:`argparse.Namespace`
+    """
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        '--version',
+        action='version',
+        version='$scriptname {ver}'.format(ver=__version__))
+
+    parser.add_argument(
+        '-w',
+        '--write',
+        action='store_true',
+        help="write the file")
+
+    parser.add_argument(
+        '-d',
+        '--description',
+        help="description of the script")
+
+    parser.add_argument('scriptpath', nargs='*')
+
+
+    opts = vars(parser.parse_args(args))
+    opts = {k: v for k, v in opts.items() if v is not None}
+
+    opts['scriptpath'] = " ".join(opts['scriptpath'])
+    opts['scriptname'] = os.path.basename(opts['scriptpath'])
+
+    if 'write' not in opts:
+        opts['write'] = False
+
+    return {k: v for k, v in opts.items() if v is not None}
+
+def write(args, content):
+    filepath = args['scriptpath']
+
+    if os.path.exists(filepath):
+        raise IOError(17, 'file {0} already exists'.format(filepath))
+
+    ofh = open(filepath, 'w')
+    ofh.write(content)
+    ofh.close()
+    os.chmod(filepath, 0755)
+
+argdict = parse_args(sys.argv[1:])
+
+executable = re.sub(r'^.*vimtmpl_', '', sys.argv[0])
+
+try:
+    config = ConfigParser.ConfigParser()
+    config.read(os.path.expanduser('~/.vimtmplrc'))
+    if config.has_section('user'):
+        if config.has_option('user', 'mailaddress'):
+            argdict['mailaddress'] = config.get('user', 'mailaddress')
+        if config.has_option('user', 'company'):
+            argdict['company'] = config.get('user', 'company')
+    if config.has_section(executable):
+        for opt in config.options(executable):
+            argdict[opt] = config.get(executable, opt)
+
+except:
+    pass
+
+
+tmpl = TemplateWorker(executable)
+
+if argdict['write']:
+    try:
+        write(argdict, tmpl(**argdict))
+    except IOError as ioerr:
+        ioerrno = ioerr[0]
+        ioerrmsg = ioerr[1]
+        if ioerrno in [13]:
+            print "%s on %s" % (ioerrmsg, argdict['scriptpath'])
+        else:
+            print ioerrmsg
+        sys.exit(ioerrno)
+
+else:
+    print tmpl(**argdict)
