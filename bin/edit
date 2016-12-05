@@ -1,0 +1,57 @@
+#!/bin/bash
+#===============================================================================
+#
+#         FILE:  edit
+#
+#        USAGE:  edit
+#
+#  DESCRIPTION:  Bash script
+#
+#      OPTIONS:  ---
+# REQUIREMENTS:  ---
+#         BUGS:  ---
+#        NOTES:  ---
+#       AUTHOR:  John van Zantvoort (jydawg), John@vanZantvoort.org
+#      COMPANY:  none
+#      CREATED:  22-Jun-2016
+#===============================================================================
+
+PATH="/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin:$PATH"
+PATH=$(echo $PATH|sed -e "s,~,$HOME,g"|tr \: \\n|sort -u|tr \\n \:|sed 's/\:$//')
+export PATH
+
+# --------------------------------------
+# VARIABLES
+# --------------------------------------
+APPNAME="$(basename $0)"
+
+#===============================================================================
+# Setup a clean path environment
+#===============================================================================
+INPUTFILE="$1"
+if [ -e "${INPUTFILE}" ]
+then
+  vim "${INPUTFILE}"
+  exit
+fi
+
+EXTENSION="${INPUTFILE##*.}"
+
+case $EXTENSION in 
+  py)
+    vimtmpl_python "${INPUTFILE}" >"${INPUTFILE}"
+    chmod 755 "${INPUTFILE}"
+    vim "${INPUTFILE}"
+    exit
+  ;;
+  sh)
+    vimtmpl_bash "${INPUTFILE}" >"${INPUTFILE}"
+    chmod 755 "${INPUTFILE}"
+    vim "${INPUTFILE}"
+    exit
+  ;;
+esac
+
+vim "${INPUTFILE}"
+
+

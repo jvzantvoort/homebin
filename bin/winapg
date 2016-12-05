@@ -1,0 +1,6 @@
+#!/bin/bash
+#
+# generate windows passwords
+#
+
+apg -M sNCL -m 12 -x 12 -l

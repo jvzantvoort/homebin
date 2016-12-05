@@ -1,0 +1,10 @@
+#!/bin/bash
+
+DIRN="$1"
+
+[[ -z "$DIRN" ]] && exit 1
+
+while : ; do
+find "$DIRN" -type d -empty -print0 | xargs -0 rmdir -v
+[[ "$?" == "0" ]] || break
+done

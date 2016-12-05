@@ -1,0 +1,92 @@
+#!/usr/bin/perl
+#
+use Digest::MD5;
+use strict;
+use warnings;
+use File::Copy;
+use File::Basename;
+my $source_checksum;
+
+# ------------------------------------------------------------------------------
+#
+# ------------------------------------------------------------------------------
+
+sub md5sum
+{
+	die("E_OPEN: $_[0] $!\n") unless(open(FILE,$_[0]));
+	binmode(FILE);
+	my $retv = Digest::MD5->new->addfile(*FILE)->hexdigest;
+	close(FILE);
+	return $retv;
+}
+
+sub md5sum_move
+{
+	my( $source, $dest ) = @_;
+	
+	return if("$source" eq "$dest");
+	my $num;
+	my %md5sums;
+	my $md5sum;
+	my $source_md5;
+
+	$source_md5 = md5sum("$source");
+	$num = 1;
+
+	# the destination doesn't exists. Simple move will do.
+	if(!-f "$dest")
+	{
+		printf "move %s %s\n", $source, $dest;
+		move("$source","$dest");
+		return;
+	}
+
+	$md5sums{md5sum("$dest")} = "$dest";
+
+	while(1)
+	{
+		my $dest_num = "${dest}.${num}";	# "file.N" 
+		last if( ! -f "$dest_num");		# "file.N" doesn't exists
+		my $md5sum = md5sum("$dest_num");	# "file.N" checksum
+		$md5sums{$md5sum} = "$dest_num";	# load the checksum
+		$num ++;				# new number
+	}
+
+	# we have this file already
+	if(exists $md5sums{$source_md5})
+	{
+		unlink($source);
+		return;
+	}
+
+	printf "move %s %s.%s\n", $source, $dest, $num;
+	move("$source", "${dest}.${num}");
+
+}
+
+unless(scalar(@ARGV)>=2)
+{
+	die "$0 <source> <destination>\n";
+}
+
+my $destination = pop(@ARGV);
+my $dest_is_dir = ( -d "$destination" );
+
+# check the sources.
+foreach my $source ( @ARGV )
+{
+	die "source: $source doesn't exists\n" if(!-e "$source");
+	die "source: $source isn't a file\n" if(!-f "$source");
+	die "source: $source is a link\n" if(-l "$source");
+}
+
+foreach my $source ( @ARGV )
+{
+	my $dest = $destination;
+	$dest .= "/" . basename( $source ) if($dest_is_dir);
+	md5sum_move($source,$dest);
+}
+
+# ------------------------------------------------------------------------------
+# The End
+# ------------------------------------------------------------------------------
