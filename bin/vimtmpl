@@ -27,11 +27,28 @@ import ConfigParser
 
 class TemplateWorker(object):
 
-    def __init__(self, executable):
-        self.dirname = 'vimtmpl'
-        self.dirnames = [os.path.join(os.path.abspath(x)) for x in sys.path]
-        self.dirnames = [os.path.expanduser('~/.vimtmpl')] + self.dirnames
+    def __init__(self, executable, *dirnames):
         self.executable = executable
+        self.dirname = 'vimtmpl'
+        self.dirnames = list()
+        self.templatesdir = os.path.expanduser('~/.tools/templates')
+
+        for dirname in dirnames:
+            dirname = os.path.expanduser(dirname)
+            if os.path.isabs(dirname):
+                self.dirnames.append(dirname)
+                continue
+
+            if os.sep not in dirname:
+                self.dirnames.append(os.path.join(self.templatesdir, dirname))
+                continue
+
+            _dirnames = dirname.split(os.sep)
+            dirname = os.path.join(self.templatesdir, *_dirnames)
+            self.dirnames.append(dirname)
+
+        self.dirnames.append(os.path.expanduser('~/.tools/templates/local'))
+        self.dirnames.append(os.path.expanduser('~/.tools/templates/default'))
 
     def tmpl_path(self, dirn):
         return os.path.join(dirn, self.executable + ".template")
@@ -86,6 +103,13 @@ def parse_args(args):
         '--description',
         help="description of the script")
 
+    parser.add_argument(
+        '-t',
+        '--templates',
+        dest='tdirs',
+        action='append',
+        help="location of the templates")
+
     parser.add_argument('scriptpath', nargs='*')
 
 
@@ -130,8 +154,11 @@ try:
 except:
     pass
 
+tdirs = list()
+if 'tdirs' in argdict:
+    tdirs = argdict['tdirs']
 
-tmpl = TemplateWorker(executable)
+tmpl = TemplateWorker(executable, *tdirs)
 
 if argdict['write']:
     try:

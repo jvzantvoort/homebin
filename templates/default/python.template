@@ -1,0 +1,49 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""$scriptname - $description
+"""
+
+import argparse
+import sys
+import os
+
+__author__ = "$user"
+__copyright__ = "$copyright"
+__email__ = "$mailaddress"
+__license__ = "$company"
+__version__ = "1.0.1"
+
+
+def parse_args(args):
+    """
+    Parse command line parameters
+
+    :param args: command line parameters as list of strings
+    :return: command line parameters as :obj:`argparse.Namespace`
+    """
+    retv = dict()
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        '--version',
+        action='version',
+        version='$scriptname {ver}'.format(ver=__version__))
+
+    parser.add_argument('rest', nargs='*')
+
+
+    opts = vars(parser.parse_args(args))
+
+    for keyn, keyv in opts.items():
+        if v is not None:
+            retv[keyn] = keyv
+
+    return retv
+
+
+def main(args):
+    args = parse_args(args)
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

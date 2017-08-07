@@ -1,0 +1,20 @@
+---
+#===============================================================================
+#
+#         FILE:  $scriptname
+#
+#        USAGE:  $scriptname
+#
+#  DESCRIPTION:  $description
+#
+#       AUTHOR:  $user ($username), $mailaddress
+#
+#      CREATED:  $date
+#
+#===============================================================================
+- name: $description
+  hosts: all
+
+
+
+...
