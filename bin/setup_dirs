@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""setup_dirs - setup homedir dirs
+
+dir: 775 ~/.cache
+dir: 775 ~/.config
+dir: 700 ~/.gnupg
+dir: 700 ~/.local
+dir: 775 ~/.screen
+dir: 700 ~/.ssh
+dir: 755 ~/bin
+dir: 755 ~/Desktop
+dir: 755 ~/Documents
+dir: 755 ~/Downloads
+dir: 755 ~/rpmbuild
+dir: 755 ~/rpmbuild/BUILD
+dir: 755 ~/rpmbuild/BUILDROOT
+dir: 755 ~/rpmbuild/RPMS
+dir: 755 ~/rpmbuild/SOURCES
+dir: 755 ~/rpmbuild/SPECS
+dir: 755 ~/rpmbuild/SRPMS
+dir: 775 ~/tmp
+dir: 755 ~/Workspace
+"""
+
+import argparse
+import sys
+import os
+
+__author__ = "John van Zantvoort"
+__copyright__ = "$copyright"
+__email__ = "John@vanZantvoort.org"
+__license__ = "none"
+__version__ = "1.0.1"
+
+def parse_doc():
+
+    for line in __doc__.split('\n'):
+        line = line.strip()
+        if not line.startswith('dir:'):
+            continue
+
+        line = line[4:].strip()
+        perms = int(line.split()[0], 8)
+        target = ''.join(line.split()[1:])
+        try:
+            os.makedirs(os.path.expanduser(target))
+        except OSError:
+            pass
+
+        os.chmod(os.path.expanduser(target), perms)
+
+
+
+def main(args):
+    parse_doc()
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
+
