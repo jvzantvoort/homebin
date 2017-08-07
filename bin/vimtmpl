@@ -85,6 +85,8 @@ def parse_args(args):
     :param args: command line parameters as list of strings
     :return: command line parameters as :obj:`argparse.Namespace`
     """
+    retv = dict()
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
@@ -112,17 +114,18 @@ def parse_args(args):
 
     parser.add_argument('scriptpath', nargs='*')
 
-
     opts = vars(parser.parse_args(args))
-    opts = {k: v for k, v in opts.items() if v is not None}
 
-    opts['scriptpath'] = " ".join(opts['scriptpath'])
-    opts['scriptname'] = os.path.basename(opts['scriptpath'])
+    for keyn, keyv in opts.items():
+        if keyv is not None:
+            retv[keyn] = keyv
 
-    if 'write' not in opts:
-        opts['write'] = False
+    retv['scriptpath'] = " ".join(retv['scriptpath'])
+    retv['scriptname'] = os.path.basename(retv['scriptpath'])
+    if 'write' not in retv:
+        retv['write'] = False
 
-    return {k: v for k, v in opts.items() if v is not None}
+    return retv
 
 def write(args, content):
     filepath = args['scriptpath']

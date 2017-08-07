@@ -35,7 +35,7 @@ def parse_args(args):
     opts = vars(parser.parse_args(args))
 
     for keyn, keyv in opts.items():
-        if v is not None:
+        if keyv is not None:
             retv[keyn] = keyv
 
     return retv
