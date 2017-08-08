@@ -1,0 +1,151 @@
+#!/bin/bash
+#===============================================================================
+#
+#         FILE:  resume_tmux
+#
+#        USAGE:  resume_tmux
+#
+#  DESCRIPTION:  Bash script
+#
+#      OPTIONS:  ---
+# REQUIREMENTS:  ---
+#         BUGS:  ---
+#        NOTES:  ---
+#       AUTHOR:  John van Zantvoort (jvzantvoort), John@vanZantvoort.org
+#      COMPANY:  none
+#      CREATED:  08-Aug-2017
+#===============================================================================
+
+declare -r CONST_SCRIPTPATH="$(readlink -f $0)"
+declare -r CONST_SCRIPTNAME="$(basename $CONST_SCRIPTPATH .sh)"
+declare -r CONST_SCRIPTDIR="$(dirname $CONST_SCRIPTPATH)"
+declare -r CONST_FACILITY="local0"
+declare -r CONST_CONFDIR="${HOME}/.bash/tmux.d"
+declare -xr LANG="en_US.UTF-8" # don't make this C ... screws up fonts.
+
+
+function logging()
+{
+  local priority="$1"; shift
+  logger -p ${CONST_FACILITY}.${priority} -i -s -t "${CONST_SCRIPTNAME}" -- "${priority} $@"
+}
+
+function logging_err()
+{
+  logging "err" "$@"
+}
+
+function logging_info()
+{
+  logging "info" "$@"
+}
+
+function script_exit()
+{
+  local STRING="$1"
+  local RETV="${2:-0}"
+  if [ "$RETV" = "0" ]
+  then
+    logging_info "$STRING"
+  else
+    logging_err "$STRING"
+  fi
+  exit $RETV
+}
+
+function pathmunge()
+{
+  [ -d "$1" ] || return
+
+  EGREP="$(which --skip-alias egrep)"
+  [[ -z "${EGREP}" ]] && script_exit "ERROR: egrep not found" 1
+
+  if echo $PATH | $EGREP -q "(^|:)$1($|:)"
+  then
+    return
+  fi
+
+  if [ "$2" = "after" ]
+  then
+      PATH=$PATH:$1
+  else
+      PATH=$1:$PATH
+  fi
+}
+
+function __ls()
+{
+  tmux ls -F '#{session_name}' 2>/dev/null
+}
+
+function __in()
+{
+  local e
+  for e in "${@:2}"; do [[ "$e" == "$1" ]] && return 0; done
+  return 1
+}
+
+function list_sessions()
+{
+
+  while read itemname
+  do
+    [[ -f "$itemname" ]] || continue
+    itemname=$(basename $itemname)
+    itemname=$(basename $itemname .rc)
+    SESSIONS[${#SESSIONS[*]}]=$itemname
+  done <<< "$(ls -1d ${CONST_CONFDIR}/*.rc|sort)"
+
+  SESSION_LIST=$(__ls)
+
+  for element in $(seq 0 $((${#SESSIONS[@]} - 1)))
+  do
+    estr=${SESSIONS[$element]}
+    __in "$estr" "${SESSION_LIST[@]}" || continue
+    echo " *  $estr"
+  done
+
+  for element in $(seq 0 $((${#SESSIONS[@]} - 1)))
+  do
+    estr=${SESSIONS[$element]}
+    __in "$estr" "${SESSION_LIST[@]}" && continue
+    echo "    $estr"
+  done
+}
+
+function tmux_attach()
+{
+  SESSION=$1;
+  CONFIGFILE="${CONST_CONFDIR}/${SESSION}.rc"
+  [[ -f "${CONFIGFILE}" ]] || CONFIGFILE="${CONST_CONFDIR}/default.rc"
+  tmux -f $CONFIGFILE attach -t $SESSION
+}
+
+function tmux_new()
+{
+  SESSION=$1;
+  CONFIGFILE="${CONST_CONFDIR}/${SESSION}.rc"
+  [[ -f "${CONFIGFILE}" ]] || CONFIGFILE="${CONST_CONFDIR}/default.rc"
+  tmux -f $CONFIGFILE new -s $SESSION
+}
+
+#------------------------------------------------------------------------------#
+#                                    Main                                      #
+#------------------------------------------------------------------------------#
+
+case $1 in
+  ls|list_sessions) list_sessions; exit ;;
+  *) SESSION=$1;
+    [[ -z "${SESSION}" ]] && exit 1
+    if __in "$SESSION" $(__ls)
+    then
+      tmux_attach $SESSION
+    else
+      tmux_new $SESSION
+    fi
+  ;;
+esac
+
+#------------------------------------------------------------------------------#
+#                                  The End                                     #
+#------------------------------------------------------------------------------#
