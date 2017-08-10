@@ -54,3 +54,15 @@ make a neat changelog from git history
 
 return a formated version of today in "wkYYWW.D" format. Useful for
 scripts and logging.
+
+## resume
+
+resume or start an ``screen`` or ``tmux`` session.
+
+## setup_dirs
+
+Setup common directories in the homedir.
+
+## setup_git
+
+Setup the git config file
