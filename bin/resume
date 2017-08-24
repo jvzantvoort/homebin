@@ -29,42 +29,16 @@ then
   exit 0
 fi
 
-# -------------------------------------------------------------------------
-# list screen sessions
-# -------------------------------------------------------------------------
-if [ "$SESSION" = "ls" ]
+# --------------------------------------
+# screen override if available
+# --------------------------------------
+if which screen >/dev/null 2>&1
 then
-  while read itemname
-  do
-    [[ -f "$itemname" ]] || continue
-    itemname=$(basename $itemname)
-    itemname=$(basename $itemname .rc)
-    SESSIONS[${#SESSIONS[*]}]=$itemname
-  done <<< "$(ls -1d ${HOME}/.bash/screenrc.d/*.rc|sort)"
-
-  for element in $(seq 0 $((${#SESSIONS[@]} - 1)))
-  do
-    estr=${SESSIONS[$element]}
-    LSELEM=
-    if [ -d "$SCREENDIR" ]
-    then
-      LSELEM=$(ls -1 ${SCREENDIR}/* 2>/dev/null|grep -P "\/\d+\.${estr}$")
-    fi
-    [[ -z "$LSELEM" ]] && echo "   $estr" || echo " * $estr"
-  done
-
-  exit
+  ${CONST_SCRIPTPATH}_screen $SESSION
+  exit 0
 fi
 
-# -------------------------------------------------------------------------
-# check if we have a configuration
-# -------------------------------------------------------------------------
-if [ -f "${HOME}/.bash/screenrc.d/${SESSION}.rc" ]
-then
-  OPTS="-c ${HOME}/.bash/screenrc.d/${SESSION}.rc $OPTS"
-fi
-
-/usr/bin/screen -D -R $OPTS
+echo "TERMINAL MULTIPLEXERS NOT AVAILABLE"
 
 # -------------------------------------------------------------------------
 # The End

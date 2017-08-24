@@ -118,7 +118,7 @@ function tmux_attach()
   SESSION=$1;
   CONFIGFILE="${CONST_CONFDIR}/${SESSION}.rc"
   [[ -f "${CONFIGFILE}" ]] || CONFIGFILE="${CONST_CONFDIR}/default.rc"
-  tmux -f $CONFIGFILE attach -t $SESSION
+  tmux -f $CONFIGFILE attach -d -t $SESSION
 }
 
 function tmux_new()
