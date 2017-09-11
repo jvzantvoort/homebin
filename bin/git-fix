@@ -509,7 +509,7 @@ def main(args):
     cmd = subprocess.Popen(command, stdout=subprocess.PIPE)
     output = cmd.communicate()
     print output[0]
-    if len(output[1]):
+    if output[1] is not None:
         print "Error"
         print output[1]
     sys.exit(cmd.returncode)
