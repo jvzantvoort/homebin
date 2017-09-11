@@ -1,0 +1,175 @@
+#!/bin/bash
+#===============================================================================
+#
+#         FILE:  setup_rpmgpg
+#
+#        USAGE:  setup_rpmgpg
+#
+#  DESCRIPTION:  Setup gpg keys for use and reuse
+#
+#      OPTIONS:  ---
+# REQUIREMENTS:  ---
+#         BUGS:  Not secure.
+#        NOTES:  ---
+#       AUTHOR:  John van Zantvoort (jvzantvoort), John@vanZantvoort.org
+#      COMPANY:  none
+#      CREATED:  11-Sep-2017
+#===============================================================================
+
+declare -r CONST_SCRIPTPATH="$(readlink -f $0)"
+declare -r CONST_SCRIPTNAME="$(basename $CONST_SCRIPTPATH .sh)"
+declare -r CONST_SCRIPTDIR="$(dirname $CONST_SCRIPTPATH)"
+declare -r CONST_FACILITY="local0"
+declare -r CONST_GNUPGDIR="${HOME}/.gnupg"
+
+declare -xr LANG="C"
+
+function logging()
+{
+  local priority="$1"; shift
+  logger -p ${CONST_FACILITY}.${priority} -i -s -t "${CONST_SCRIPTNAME}" -- "${priority} $@"
+}
+
+function logging_err()
+{
+  logging "err" "$@"
+}
+
+function logging_info()
+{
+  logging "info" "$@"
+}
+
+function script_exit()
+{
+  local STRING="$1"
+  local RETV="${2:-0}"
+  if [ "$RETV" = "0" ]
+  then
+    logging_info "$STRING"
+  else
+    logging_err "$STRING"
+  fi
+  exit $RETV
+}
+
+function pathmunge()
+{
+  [ -d "$1" ] || return
+
+  EGREP="$(which --skip-alias egrep)"
+  [[ -z "${EGREP}" ]] && script_exit "ERROR: egrep not found" 1
+
+  if echo $PATH | $EGREP -q "(^|:)$1($|:)"
+  then
+    return
+  fi
+
+  if [ "$2" = "after" ]
+  then
+      PATH=$PATH:$1
+  else
+      PATH=$1:$PATH
+  fi
+}
+
+function create_gpg_batch_file()
+{
+  local BASEDIR=$1; shift
+  local NAME=$1; shift
+  local COMMENT=$1; shift
+  local EMAIL=$1; shift
+  local OUTPUTFILE=$1; shift
+
+  local BATCHFILE="${BASEDIR}/batch.txt"
+  [[ -f "${BASEDIR}/batch.txt" ]] && return
+
+  mkdir -p "${BASEDIR}"
+  pushd "${BASEDIR}"
+  echo '%echo Generating a standard key'  >"${BATCHFILE}"
+  echo 'Key-Type: DSA'                   >>"${BATCHFILE}"
+  echo 'Key-Length: 1024'                >>"${BATCHFILE}"
+  echo 'Subkey-Type: ELG-E'              >>"${BATCHFILE}"
+  echo 'Subkey-Length: 1024'             >>"${BATCHFILE}"
+  echo "Name-Real: ${NAME}"              >>"${BATCHFILE}"
+  echo "Name-Comment: ${COMMENT}"        >>"${BATCHFILE}"
+  echo "Name-Email: ${EMAIL}"            >>"${BATCHFILE}"
+  echo 'Expire-Date: 0'                  >>"${BATCHFILE}"
+  echo "%pubring ${OUTPUTFILE}.pub"      >>"${BATCHFILE}"
+  echo "%secring ${OUTPUTFILE}.sec"      >>"${BATCHFILE}"
+  echo '%commit'                         >>"${BATCHFILE}"
+  echo '%echo done'                      >>"${BATCHFILE}"
+  popd
+}
+
+function generate_gpg_keys()
+{
+  local BASEDIR=$1; shift
+  local OUTPUTFILE=$1; shift
+
+  local BATCHFILE="${BASEDIR}/batch.txt"
+  [[ -f "${OUTPUTFILE}.pub" ]] && return
+  [[ -f "${OUTPUTFILE}.sec" ]] && return
+  [[ -f "${BASEDIR}/batch.txt" ]] || return 1
+
+  pushd "${BASEDIR}"
+  gpg --gen-key --batch "${BASEDIR}/batch.txt"
+  popd
+  [[ -f "${OUTPUTFILE}.pub" ]] || return 2
+  [[ -f "${OUTPUTFILE}.sec" ]] || return 3
+
+}
+
+function import_gpg_key()
+{
+
+  local BASEDIR=$1; shift
+  local OUTPUTFILE=$1; shift
+
+  [[ -f "${OUTPUTFILE}.pub" ]] || return 4
+  [[ -f "${OUTPUTFILE}.sec" ]] || return 5
+
+  pushd "${BASEDIR}"
+  gpg --import "${OUTPUTFILE}.pub" ]] || return 6
+  gpg --import "${OUTPUTFILE}.sec" ]] || return 7
+  popd
+
+}
+
+
+#------------------------------------------------------------------------------#
+#                                    Main                                      #
+#------------------------------------------------------------------------------#
+
+logging_info "start"
+
+# setup path
+#---------------------------------------
+# pathmunge "${HOME}/bin" "after"
+# export PATH
+
+G_BASEDIR="${CONST_GNUPGDIR}/batch"
+G_NAME="Company Packager"
+G_COMMENT="packager"
+G_EMAIL="packager@company.com"
+G_OUTPUTFILE="${G_COMMENT}"
+
+create_gpg_batch_file "${G_BASEDIR}" "${G_NAME}" "${G_COMMENT}" "${G_EMAIL}" \
+  "${G_OUTPUTFILE}"
+RETV=$?
+[[ "$RETV" = "0" ]] || exit $RETV
+
+generate_gpg_keys "${G_BASEDIR}" "${G_OUTPUTFILE}"
+RETV=$?
+[[ "$RETV" = "0" ]] || exit $RETV
+
+import_gpg_key "${G_BASEDIR}" "${G_OUTPUTFILE}"
+RETV=$?
+[[ "$RETV" = "0" ]] || exit $RETV
+
+gpg --export -a "${G_NAME}" >"${HOME}/RPM-GPG-KEY-${G_OUTPUTFILE}"
+
+script_exit "end"
+#------------------------------------------------------------------------------#
+#                                  The End                                     #
+#------------------------------------------------------------------------------#
