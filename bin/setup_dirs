@@ -9,6 +9,7 @@ dir: 700 ~/.local
 dir: 775 ~/.screen
 dir: 700 ~/.ssh
 dir: 755 ~/bin
+dir: 755 ~/Archive
 dir: 755 ~/Desktop
 dir: 755 ~/Documents
 dir: 755 ~/Downloads
