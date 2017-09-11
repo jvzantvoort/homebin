@@ -505,7 +505,7 @@ def main(args):
     excuse = random.choice([x for x in EXCUSES.split('\n') if len(x.strip())])
     if prefix:
         excuse = "bullshit remark: " + excuse
-    command = ['git', 'commit', "-m", "\"" + excuse + "\""] + targets
+    command = ['git', 'commit', "-m", excuse] + targets
     cmd = subprocess.Popen(command, stdout=subprocess.PIPE)
     output = cmd.communicate()
     print output[0]
