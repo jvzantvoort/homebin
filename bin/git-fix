@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""git-fix - $description
-"""
+"""git-fix - sometimes I cannot be bothered to think up a commit message"""
 
 import optparse
 import sys
