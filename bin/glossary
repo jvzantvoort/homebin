@@ -23,7 +23,7 @@ def edit(glossary_dir, itemname):
     subprocess.call(['/usr/bin/vim', outputfile])
 
 def wrap_and_print_line(inputline):
-    wrapper = textwrap.TextWrapper(initial_indent="    ", subsequent_indent="    ", width=80)
+    wrapper = textwrap.TextWrapper(initial_indent="      ", subsequent_indent="      ", width=80)
     for line in wrapper.wrap(inputline):
         print line
 
@@ -41,11 +41,10 @@ def generate_glossary(glossary_dir, item):
         lines.append(line)
 
     for term in sorted(terms):
-        print "  %s" % term
-
-    for line in lines:
-        wrap_and_print_line(line)
-    print ""
+        print "   %s" % term
+        for line in lines:
+            wrap_and_print_line(line)
+        print ""
 
 def parse_args(args):
     """
@@ -155,6 +154,8 @@ def main(args):
         for item in list_glossary_items(glossary_dir):
             print item
     if do_generate:
+        print "Glossary"
+        print "========\n"
         print ".. glossary::\n"
         for item in sorted(list_glossary_items(glossary_dir)):
             generate_glossary(glossary_dir, item)
