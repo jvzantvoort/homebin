@@ -1,6 +1,30 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""glossary - I got tired manually maintaining glossary lists"""
+"""glossary - I got tired manually maintaining glossary lists
+
+original can be found on:
+    https://raw.githubusercontent.com/jvzantvoort/homebin/master/bin/glossary
+
+usage:
+
+    # configure the path
+    glossary -s /path/to/somedir
+
+    # init the path
+    glossary -i
+
+    # add or edit a term
+    glossary -a foo
+
+    or
+
+    glossary -e foo
+
+    # generate a glossary
+    glossary -g
+
+
+"""
 
 import argparse
 import sys
