@@ -110,8 +110,8 @@ def main(args):
     args = parse_args(args)
     do_set = args.get('SET', False)
     do_init = args.get('INIT', False)
-    do_edit = args.get('ADD', False)
-    do_edit = args.get('EDIT', do_edit)
+    do_add = args.get('ADD', False)
+    do_edit = args.get('EDIT', False)
     do_list = args.get('LIST', False)
     do_generate = args.get('GENERATE', False)
     rest = args.get('option', [])
@@ -132,7 +132,7 @@ def main(args):
         except IndexError:
             sys.exit("set needs an argument")
 
-        with open(os.path.expanduser('~/.glossary', 'w')) as ofh:
+        with open(os.path.expanduser('~/.glossary'), 'w') as ofh:
             ofh.write(glossary_dir)
 
         return
@@ -147,7 +147,7 @@ def main(args):
 
         return
 
-    if do_edit:
+    if do_edit or do_add:
         edit(glossary_dir, rest.pop(0))
 
     if do_list:
