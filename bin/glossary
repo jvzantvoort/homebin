@@ -1,0 +1,163 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""glossary - I got tired manually maintaining glossary lists"""
+
+import argparse
+import sys
+import os
+import subprocess
+import textwrap
+
+__author__ = "John van Zantvoort"
+__copyright__ = "$copyright"
+__email__ = "John@vanZantvoort.org"
+__license__ = "none"
+__version__ = "1.0.1"
+
+def list_glossary_items(glossary_dir):
+    return [x[:-4] for x in os.listdir(glossary_dir)]
+
+def edit(glossary_dir, itemname):
+    itemname = itemname.lower()
+    outputfile = os.path.join(glossary_dir, itemname + ".rst")
+    subprocess.call(['/usr/bin/vim', outputfile])
+
+def wrap_and_print_line(inputline):
+    wrapper = textwrap.TextWrapper(initial_indent="    ", subsequent_indent="    ", width=80)
+    for line in wrapper.wrap(inputline):
+        print line
+
+def generate_glossary(glossary_dir, item):
+    terms = list()
+    lines = list()
+
+    terms.append(item)
+    path = os.path.join(glossary_dir, item + ".rst")
+
+    for line in open(path).readlines():
+        if line.startswith(":alias:"):
+            terms.append(line[7:].strip())
+            continue
+        lines.append(line)
+
+    for term in sorted(terms):
+        print "  %s" % term
+
+    for line in lines:
+        wrap_and_print_line(line)
+    print ""
+
+def parse_args(args):
+    """
+    Parse command line parameters
+
+    :param args: command line parameters as list of strings
+    :return: command line parameters as :obj:`argparse.Namespace`
+    """
+    retv = dict()
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        '--version',
+        action='version',
+        version='glossary {ver}'.format(ver=__version__))
+
+    parser.add_argument(
+            '-s', '--set',
+            dest="SET",
+            action="store_true",
+            help="set the location of the archive")
+
+    parser.add_argument(
+            '-l', '--list',
+            dest="LIST",
+            action="store_true",
+            help="list the contentse of the archive")
+
+    parser.add_argument(
+            '-a', '--add',
+            dest="ADD",
+            action="store_true",
+            help="add an argument")
+
+    parser.add_argument(
+            '-e', '--edit',
+            dest="EDIT",
+            action="store_true",
+            help="edit an argument")
+
+    parser.add_argument(
+            '-g', '--generate',
+            dest="GENERATE", action="store_true", help="generate glossary")
+
+    parser.add_argument(
+            '-i', '--init',
+            dest="INIT", action="store_true",
+            help="initialize a glossary repository")
+
+    parser.add_argument('option', nargs='*')
+
+
+    opts = vars(parser.parse_args(args))
+
+    for keyn, keyv in opts.items():
+        if keyv is not None:
+            retv[keyn] = keyv
+
+    return retv
+
+
+def main(args):
+    args = parse_args(args)
+    do_set = args.get('SET', False)
+    do_init = args.get('INIT', False)
+    do_edit = args.get('ADD', False)
+    do_edit = args.get('EDIT', do_edit)
+    do_list = args.get('LIST', False)
+    do_generate = args.get('GENERATE', False)
+    rest = args.get('option', [])
+
+
+    glossary_dir = str()
+    try:
+        glossary_dir = open(os.path.expanduser('~/.glossary')).read().strip('\n').strip()
+
+    except IOError:
+        glossary_dir = os.path.expanduser('~/glossary')
+
+    if do_set:
+
+        try:
+            glossary_dir = rest.pop(0)
+
+        except IndexError:
+            sys.exit("set needs an argument")
+
+        with open(os.path.expanduser('~/.glossary', 'w')) as ofh:
+            ofh.write(glossary_dir)
+
+        return
+
+    if do_init:
+
+        try:
+            os.makedirs(glossary_dir)
+
+        except:
+            pass
+
+        return
+
+    if do_edit:
+        edit(glossary_dir, rest.pop(0))
+
+    if do_list:
+        for item in list_glossary_items(glossary_dir):
+            print item
+    if do_generate:
+        print ".. glossary::\n"
+        for item in sorted(list_glossary_items(glossary_dir)):
+            generate_glossary(glossary_dir, item)
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
