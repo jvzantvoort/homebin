@@ -1,0 +1,449 @@
+#!/bin/bash
+#===============================================================================
+#
+#         FILE:  build_home_setup
+#
+#        USAGE:  build_home_setup
+#
+#  DESCRIPTION:  $description
+#
+#      OPTIONS:  ---
+# REQUIREMENTS:  ---
+#         BUGS:  ---
+#        NOTES:  ---
+#       AUTHOR:  John van Zantvoort (jvzantvoort), $mailaddress
+#      COMPANY:  $company
+#      CREATED:  31-Jul-2018
+#===============================================================================
+
+declare -r CONST_SCRIPTPATH="$(readlink -f $0)"
+declare -r CONST_SCRIPTNAME="$(basename $CONST_SCRIPTPATH .sh)"
+declare -r CONST_SCRIPTDIR="$(dirname $CONST_SCRIPTPATH)"
+declare -r CONST_FACILITY="local0"
+declare -xr LANG="C"
+
+VIMBUNDLES=(
+"https://github.com/VundleVim/Vundle.vim.git"
+"https://github.com/kien/ctrlp.vim.git"
+"https://github.com/itchyny/lightline.vim.git"
+"https://github.com/tomasr/molokai.git"
+"https://github.com/scrooloose/nerdtree.git"
+"https://github.com/tomtom/tlib_vim.git"
+"https://github.com/MarcWeber/vim-addon-mw-utils.git"
+"https://github.com/vim-airline/vim-airline-themes.git"
+"https://github.com/vim-airline/vim-airline.git"
+"https://github.com/chase/vim-ansible-yaml.git"
+"https://github.com/altercation/vim-colors-solarized.git"
+"https://github.com/nvie/vim-flake8.git"
+"https://github.com/tpope/vim-fugitive.git"
+"https://github.com/fatih/vim-go.git"
+"https://github.com/garbas/vim-snipmate.git"
+)
+
+function logging()
+{
+  local priority="$1"; shift
+  logger -p ${CONST_FACILITY}.${priority} -i -s -t "${CONST_SCRIPTNAME}" -- "${priority} $@"
+}
+
+function logging_err()
+{
+  logging "err" "$@"
+}
+
+function logging_info()
+{
+  logging "info" "$@"
+}
+
+function script_exit()
+{
+  local STRING="$1"
+  local RETV="${2:-0}"
+  if [ "$RETV" = "0" ]
+  then
+    logging_info "$STRING"
+  else
+    logging_err "$STRING"
+  fi
+  exit $RETV
+}
+
+function pathmunge()
+{
+  [ -d "$1" ] || return
+
+  EGREP="$(which --skip-alias egrep)"
+  [[ -z "${EGREP}" ]] && script_exit "ERROR: egrep not found" 1
+
+  if echo $PATH | $EGREP -q "(^|:)$1($|:)"
+  then
+    return
+  fi
+
+  if [ "$2" = "after" ]
+  then
+      PATH=$PATH:$1
+  else
+      PATH=$1:$PATH
+  fi
+}
+
+function mkstaging_area()
+# ------------------------------------------------------------------------------
+#         NAME:  mkstaging_area
+#  DESCRIPTION:  Creates a temporary staging area and set the variable
+#                $STAGING_AREA to point to it
+#   PARAMETERS:  STRING, mktemp template (optional)
+#      RETURNS:  0, oke
+#                1, not oke
+# ------------------------------------------------------------------------------
+{
+  local RETV="0"
+  local TEMPLATE="${HOME}/tmp/stage.XXXXXXXX"
+  local TEMPLATE_STR=; shift
+
+  [[ -n "${TEMPLATE_STR}" ]] && TEMPLATE="${TEMPLATE_STR}"
+
+  STAGING_AREA=$(mktemp -d ${TEMPLATE})
+  RETV=$?
+
+  if [ $RETV == 0 ]
+  then
+    return 0
+  else
+    remark "mkstaging_area failed $RETV"
+    return 1
+  fi
+
+  return 0
+} # end: mkstaging_area
+
+function gitexport()
+{
+  local sourceurl=""
+  local destdir=""
+  local basedir=""
+  local prefix=""
+  local varname=""
+  local vartype=""
+  local basename=""
+  local tag=""
+  local args=()
+
+  #
+  # --------------------------------------
+  for ind in "$@"
+  do
+    case $ind in
+    -h)        echo "$gitexport [--url <>] [--destdir <>] [--tag <>]";
+               return;;
+    --url)     sourceurl="$2"; shift;;
+    --destdir) destdir="$2"; shift;;
+    --basedir) basedir="$2"; shift;;
+    --prefix)  prefix="$2"; shift;;
+    --varname) varname="$2"; shift;;
+    --vartype) vartype="$2"; shift;;
+    --tag)     tag="$2"; shift;;
+    -*)        echo "unknown option: $1" >&2; return 1;;
+    *)         args[${#args[@]}]="$1"; shift;;
+    esac
+  done
+
+  [[ -z "$sourceurl" ]] && return 2
+  [[ -z "$destdir"   ]] && return 3
+  [[ -z "$basedir"   ]] && basedir="$PWD"
+  basename=$(basename $sourceurl .git)
+  if [ -z "$varname" ]
+  then
+    varname=$(echo "${basename}"|tr A-Z a-z|tr -d '-'|tr '\.' '_')
+  fi
+  # --------------------------------------
+  #
+
+  # checkout archive
+  # --------------------------------------
+  pushd "${basedir}"
+
+  git clone --quiet "$sourceurl"
+  pushd $basename >/dev/null 2>&1 || return 4
+  # --------------------------------------
+  #
+
+  # get a tag
+  # --------------------------------------
+  if [ -z "$tag" ]
+  then
+    tag=$(git describe --abbrev=0 --tags)
+
+  elif [ "$tag" = "HEAD" ]
+  then
+    longhash=`git rev-parse HEAD`
+    shorthash=`git log --pretty=format:'%h' -n 1`
+
+  else
+    longhash=$tag
+    shorthash=$tag
+
+  fi
+  # --------------------------------------
+  #
+
+  if [ -z "$prefix" ]
+  then
+    prefix="${basename}-${shorthash}"
+  fi
+
+  echo "${varname}=\"${prefix}.tar.gz\"" >> ${basedir}/${vartype}.sh
+
+  outputfile="$destdir/${prefix}.tar"
+
+  git archive \
+    --format=tar \
+    --prefix="${prefix}/" \
+    --output="${outputfile}" \
+    $longhash >/dev/null 2>&1
+
+  popd
+
+  rm -rf $basename
+
+  [[ -f "${outputfile}.gz" ]] && rm -f "${outputfile}.gz"
+
+  gzip -9 "${outputfile}"
+
+  popd
+}
+
+#===  FUNCTION  ================================================================
+#         NAME:  git_exp
+#  DESCRIPTION:  export a git repo to a select destination
+#   PARAMETERS:  STRING, source url
+#                STRING, dest dir
+#      RETURNS:  nothing
+#===============================================================================
+git_exp()
+{
+    local SOURCEURL=$1
+    logging_info "sourceurl: $SOURCEURL"
+    local DESTDIR=$2
+    logging_info "destdir: $DESTDIR"
+    local TAG=$3
+
+    [[ -z "$TAG" ]] && TAG=$(git describe --abbrev=0 --tags)
+    logging_info "tag: $TAG"
+
+    BASENAME=$(basename $SOURCEURL .git)
+    logging_info "basename: $BASENAME"
+
+    local LONG_HASH=$TAG
+    local SHORT_HASH=$TAG
+
+    if [ "$TAG" = "HEAD" ]
+    then
+      LONG_HASH=`git rev-parse HEAD`
+      SHORT_HASH=`git log --pretty=format:'%h' -n 1`
+    fi
+    local EXPORTNAME="${BASENAME}-${SHORT_HASH}"
+    local OUTPUTFILE="${EXPORTNAME}.tar"
+
+    logging_info "long hash: $LONG_HASH"
+    logging_info "short hash: $SHORT_HASH"
+
+
+    [[ -d "$DESTDIR" ]] || mkdir -p "$DESTDIR"
+
+    mkdir -p $STAGING_AREA/src
+
+    cd $STAGING_AREA/src
+
+    git clone $SOURCEURL $BASENAME
+    pushd $BASENAME >/dev/null 2>&1
+
+    git archive \
+      --format=tar \
+      --prefix="${BASENAME}/" \
+      --output=$DESTDIR/${OUTPUTFILE} \
+      $LONG_HASH >/dev/null 2>&1
+    popd
+
+    rm -rf $STAGING_AREA/src/${BASENAME}
+    logging_info "compression, start"
+    [[ -f "$DESTDIR/${OUTPUTFILE}.gz" ]] && rm -f "$DESTDIR/${OUTPUTFILE}.gz"
+    gzip -9 "$DESTDIR/${OUTPUTFILE}"
+    logging_info "compression, end"
+
+} # end: git_exp
+
+git_dl_arch()
+{
+    local SOURCEURL=$1
+    local TAG=$2
+
+    BASENAME=$(basename $SOURCEURL .git)
+
+    pushd "${STAGING_AREA}" >/dev/null 2>&1
+    git clone "${SOURCEURL}"
+    pushd "${BASENAME}" >/dev/null 2>&1
+    [[ -z "$TAG" ]] && TAG=$(git describe --abbrev=0 --tags)
+
+    logging_info "sourceurl: $SOURCEURL"
+    logging_info "basename: $BASENAME"
+    logging_info "tag: $TAG"
+
+    git_exp "${SOURCEURL}" ${STAGING_AREA}/homesetup/packages $TAG
+    rm -rf "${STAGING_AREA}/${BASENAME}"
+    popd
+    popd
+}
+
+git_dl_vimplugin()
+{
+    local SOURCEURL=$1
+    local TAG=$2
+
+    BASENAME=$(basename $SOURCEURL .git)
+
+    pushd "${STAGING_AREA}" >/dev/null 2>&1
+    git clone "${SOURCEURL}"
+    pushd "${BASENAME}" >/dev/null 2>&1
+    [[ -z "$TAG" ]] && TAG=$(git describe --abbrev=0 --tags)
+
+    logging_info "sourceurl: $SOURCEURL"
+    logging_info "basename: $BASENAME"
+    logging_info "tag: $TAG"
+
+    logging_info "cmnd: git_exp ${SOURCEURL} ${STAGING_AREA}/homesetup/vimbundles $TAG"
+    git_exp "${SOURCEURL}" ${STAGING_AREA}/homesetup/vimbundles $TAG
+    popd
+    rm -rf "${STAGING_AREA}/${BASENAME}"
+    popd
+}
+
+function install_main()
+{
+  local BASEDIR=$1; shift
+
+  cat > "${BASEDIR}/main.sh" << 'END'
+#!/bin/bash
+
+CURDIR=`pwd`
+TEMPLATE="${HOME}/.installhome.XXXXXXXX"
+STAGING_AREA=$(mktemp -d ${TEMPLATE})
+[[ -z "$STAGING_AREA" ]] && exit 1
+
+END
+  if [ -f "${STAGING_AREA}/packages.sh" ]
+  then
+    cat "${STAGING_AREA}/packages.sh" >> "${BASEDIR}/main.sh"
+  fi
+
+echo "VIMBUNDLES=(" >> "${BASEDIR}/main.sh"
+  if [ -f "${STAGING_AREA}/vimbundles.sh" ]
+  then
+    cat "${STAGING_AREA}/vimbundles.sh" | while read line
+    do
+      echo "$line" | cut -d'=' -f 2 >> "${BASEDIR}/main.sh"
+    done
+  fi
+
+  cat >> "${BASEDIR}/main.sh" << 'END'
+           )
+mkdir -p "${STAGING_AREA}/.tools"
+mkdir -p "${STAGING_AREA}/.bash"
+mkdir -p "${STAGING_AREA}/.vim/bundle"
+
+tar -zx -C "${STAGING_AREA}/.tools" --strip-components 2  -f packages/$homebin
+tar -zx -C "${STAGING_AREA}/.bash" --strip-components 2  -f packages/$jvzantvoortbashconfig
+tar -zx -C "${STAGING_AREA}/.vim" --strip-components 2  -f packages/$jvzantvoortvimconfig
+
+pushd "${STAGING_AREA}/.vim/bundle"
+for ind in "${VIMBUNDLES[@]}"
+do
+  tar -xf "${CURDIR}/vimbundles/${ind}"
+done
+popd
+
+echo $@
+END
+  chmod 755 "${BASEDIR}/main.sh"
+
+}
+
+
+#------------------------------------------------------------------------------#
+#                                    Main                                      #
+#------------------------------------------------------------------------------#
+# makeself packages packages.bin packages ./main.sh
+#------------------------------------------------------------------------------#
+
+
+
+
+logging_info "start"
+
+# setup path
+#---------------------------------------
+pathmunge "${HOME}/bin" "after"
+export PATH
+
+if which makeself >/dev/null 2>&1
+then
+  MAKESELF="$(which makeself)"
+else
+  script_exit "don't have makeself" 1
+fi
+
+mkstaging_area
+
+mkdir -p "${STAGING_AREA}/homesetup/packages"
+mkdir -p "${STAGING_AREA}/homesetup/vimbundles"
+
+pushd "${STAGING_AREA}" >/dev/null 2>&1
+
+gitexport --url "https://github.com/jvzantvoort/jvzantvoort-bash-config.git" \
+          --destdir "${STAGING_AREA}/homesetup/packages" \
+          --basedir "${STAGING_AREA}" \
+          --varname "jvzantvoortbashconfig" \
+          --vartype "packages" \
+          --tag "HEAD" 
+
+gitexport --url "https://github.com/jvzantvoort/jvzantvoort-vim-config.git" \
+          --destdir "${STAGING_AREA}/homesetup/packages" \
+          --basedir "${STAGING_AREA}" \
+          --varname "jvzantvoortvimconfig" \
+          --vartype "packages" \
+          --tag "HEAD" 
+
+gitexport --url "https://github.com/jvzantvoort/homebin.git" \
+          --destdir "${STAGING_AREA}/homesetup/packages" \
+          --basedir "${STAGING_AREA}" \
+          --varname "tooling" \
+          --vartype "packages" \
+          --tag "HEAD" 
+
+popd 
+
+for ind in "${VIMBUNDLES[@]}"
+do
+  gitexport --url "${ind}" \
+            --destdir "${STAGING_AREA}/homesetup/vimbundles" \
+            --basedir "${STAGING_AREA}" \
+            --vartype "vimbundles" \
+            --tag "HEAD" 
+done
+
+install_main "${STAGING_AREA}/homesetup"
+
+
+
+
+echo "${STAGING_AREA}"
+pushd "${STAGING_AREA}" >/dev/null 2>&1
+$MAKESELF homesetup homesetup.bin homesetup ./main.sh
+popd
+
+script_exit "end"
+#------------------------------------------------------------------------------#
+#                                  The End                                     #
+#------------------------------------------------------------------------------#
