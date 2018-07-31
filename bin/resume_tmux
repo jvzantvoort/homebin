@@ -21,6 +21,7 @@ declare -r CONST_SCRIPTNAME="$(basename $CONST_SCRIPTPATH .sh)"
 declare -r CONST_SCRIPTDIR="$(dirname $CONST_SCRIPTPATH)"
 declare -r CONST_FACILITY="local0"
 declare -r CONST_CONFDIR="${HOME}/.bash/tmux.d"
+declare -r CONST_TERM="screen-256color"
 declare -xr LANG="en_US.UTF-8" # don't make this C ... screws up fonts.
 
 
@@ -118,7 +119,7 @@ function tmux_attach()
   SESSION=$1;
   CONFIGFILE="${CONST_CONFDIR}/${SESSION}.rc"
   [[ -f "${CONFIGFILE}" ]] || CONFIGFILE="${CONST_CONFDIR}/default.rc"
-  tmux -f $CONFIGFILE attach -d -t $SESSION
+  TERM="${CONST_TERM}" tmux -f $CONFIGFILE attach -d -t $SESSION
 }
 
 function tmux_new()
@@ -126,7 +127,7 @@ function tmux_new()
   SESSION=$1;
   CONFIGFILE="${CONST_CONFDIR}/${SESSION}.rc"
   [[ -f "${CONFIGFILE}" ]] || CONFIGFILE="${CONST_CONFDIR}/default.rc"
-  tmux -f $CONFIGFILE new -s $SESSION
+  TERM="${CONST_TERM}" tmux -f $CONFIGFILE new -s $SESSION
 }
 
 #------------------------------------------------------------------------------#

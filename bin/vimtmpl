@@ -3,8 +3,27 @@
 #------------------------------------------------------------------------------#
 #                                    vimtmpl                                   #
 #------------------------------------------------------------------------------#
-"""vimtmpl, short description of script.
+"""vimtmpl, output or write a template script file
 
+Copyright (c) 2018 John van Zantvoort
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
 """
 
 __author__ = "John van Zantvoort"
@@ -24,16 +43,27 @@ import pwd
 import pprint
 import re
 import ConfigParser
+import logging
+
+logger = logging.getLogger('vimtmpl')
+logger.setLevel(logging.DEBUG)
+logout = logging.StreamHandler(sys.stderr)
+logout.setFormatter(
+        logging.Formatter("line: %(lineno)s %(levelname)s: %(message)s"))
+logger.addHandler(logout)
 
 class TemplateWorker(object):
 
     def __init__(self, executable, *dirnames):
+        self.logger = logging.getLogger('vimtmpl')
+        self.logger.debug('executable: {0}'.format(executable))
         self.executable = executable
         self.dirname = 'vimtmpl'
         self.dirnames = list()
         self.templatesdir = os.path.expanduser('~/.tools/templates')
 
         for dirname in dirnames:
+            self.logger.debug('dir: {0}'.format(dirname))
             dirname = os.path.expanduser(dirname)
             if os.path.isabs(dirname):
                 self.dirnames.append(dirname)
@@ -46,6 +76,8 @@ class TemplateWorker(object):
             _dirnames = dirname.split(os.sep)
             dirname = os.path.join(self.templatesdir, *_dirnames)
             self.dirnames.append(dirname)
+        else:
+            self.logger.debug('no extra dirs')
 
         self.dirnames.append(os.path.expanduser('~/.tools/templates/local'))
         self.dirnames.append(os.path.expanduser('~/.tools/templates/default'))
@@ -61,7 +93,10 @@ class TemplateWorker(object):
     def get_template(self):
         for x in self.dirnames:
             if self.has_template(x):
+                self.logger.debug("found template in {0}".format(x))
                 return string.Template(open(self.tmpl_path(x)).read())
+            else:
+                self.logger.debug("no template in {0}".format(x))
 
     def __call__(self, **kwargs):
         data = self.get_template()
@@ -76,6 +111,7 @@ class TemplateWorker(object):
             scripttext = data.safe_substitute(info)
         except AttributeError:
             scripttext = 'Error: have no template data for {0}'.format(self.executable)
+            self.logger.error(scripttext)
         return scripttext
 
 def parse_args(args):
@@ -131,7 +167,8 @@ def write(args, content):
     filepath = args['scriptpath']
 
     if os.path.exists(filepath):
-        raise IOError(17, 'file {0} already exists'.format(filepath))
+        errmsg = 'file {0} already exists'.format(filepath)
+        raise IOError(17, errmsg)
 
     ofh = open(filepath, 'w')
     ofh.write(content)
@@ -170,9 +207,9 @@ if argdict['write']:
         ioerrno = ioerr[0]
         ioerrmsg = ioerr[1]
         if ioerrno in [13]:
-            print "%s on %s" % (ioerrmsg, argdict['scriptpath'])
+            logger.error("%s on %s" % (ioerrmsg, argdict['scriptpath']))
         else:
-            print ioerrmsg
+            logger.error(ioerrmsg)
         sys.exit(ioerrno)
 
 else:
