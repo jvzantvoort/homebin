@@ -20,6 +20,7 @@ declare -r CONST_SCRIPTPATH="$(readlink -f $0)"
 declare -r CONST_SCRIPTNAME="$(basename $CONST_SCRIPTPATH .sh)"
 declare -r CONST_SCRIPTDIR="$(dirname $CONST_SCRIPTPATH)"
 declare -r CONST_FACILITY="local0"
+declare -r CONST_CWD="${PWD}"
 declare -xr LANG="C"
 
 VIMBUNDLES=(
@@ -163,7 +164,7 @@ function gitexport()
 
   # checkout archive
   # --------------------------------------
-  pushd "${basedir}"
+  pushd "${basedir}" >/dev/null 2>&1
 
   git clone --quiet "$sourceurl"
   pushd $basename >/dev/null 2>&1 || return 4
@@ -204,7 +205,7 @@ function gitexport()
     --output="${outputfile}" \
     $longhash >/dev/null 2>&1
 
-  popd
+  popd >/dev/null 2>1
 
   rm -rf $basename
 
@@ -212,112 +213,7 @@ function gitexport()
 
   gzip -9 "${outputfile}"
 
-  popd
-}
-
-#===  FUNCTION  ================================================================
-#         NAME:  git_exp
-#  DESCRIPTION:  export a git repo to a select destination
-#   PARAMETERS:  STRING, source url
-#                STRING, dest dir
-#      RETURNS:  nothing
-#===============================================================================
-git_exp()
-{
-    local SOURCEURL=$1
-    logging_info "sourceurl: $SOURCEURL"
-    local DESTDIR=$2
-    logging_info "destdir: $DESTDIR"
-    local TAG=$3
-
-    [[ -z "$TAG" ]] && TAG=$(git describe --abbrev=0 --tags)
-    logging_info "tag: $TAG"
-
-    BASENAME=$(basename $SOURCEURL .git)
-    logging_info "basename: $BASENAME"
-
-    local LONG_HASH=$TAG
-    local SHORT_HASH=$TAG
-
-    if [ "$TAG" = "HEAD" ]
-    then
-      LONG_HASH=`git rev-parse HEAD`
-      SHORT_HASH=`git log --pretty=format:'%h' -n 1`
-    fi
-    local EXPORTNAME="${BASENAME}-${SHORT_HASH}"
-    local OUTPUTFILE="${EXPORTNAME}.tar"
-
-    logging_info "long hash: $LONG_HASH"
-    logging_info "short hash: $SHORT_HASH"
-
-
-    [[ -d "$DESTDIR" ]] || mkdir -p "$DESTDIR"
-
-    mkdir -p $STAGING_AREA/src
-
-    cd $STAGING_AREA/src
-
-    git clone $SOURCEURL $BASENAME
-    pushd $BASENAME >/dev/null 2>&1
-
-    git archive \
-      --format=tar \
-      --prefix="${BASENAME}/" \
-      --output=$DESTDIR/${OUTPUTFILE} \
-      $LONG_HASH >/dev/null 2>&1
-    popd
-
-    rm -rf $STAGING_AREA/src/${BASENAME}
-    logging_info "compression, start"
-    [[ -f "$DESTDIR/${OUTPUTFILE}.gz" ]] && rm -f "$DESTDIR/${OUTPUTFILE}.gz"
-    gzip -9 "$DESTDIR/${OUTPUTFILE}"
-    logging_info "compression, end"
-
-} # end: git_exp
-
-git_dl_arch()
-{
-    local SOURCEURL=$1
-    local TAG=$2
-
-    BASENAME=$(basename $SOURCEURL .git)
-
-    pushd "${STAGING_AREA}" >/dev/null 2>&1
-    git clone "${SOURCEURL}"
-    pushd "${BASENAME}" >/dev/null 2>&1
-    [[ -z "$TAG" ]] && TAG=$(git describe --abbrev=0 --tags)
-
-    logging_info "sourceurl: $SOURCEURL"
-    logging_info "basename: $BASENAME"
-    logging_info "tag: $TAG"
-
-    git_exp "${SOURCEURL}" ${STAGING_AREA}/homesetup/packages $TAG
-    rm -rf "${STAGING_AREA}/${BASENAME}"
-    popd
-    popd
-}
-
-git_dl_vimplugin()
-{
-    local SOURCEURL=$1
-    local TAG=$2
-
-    BASENAME=$(basename $SOURCEURL .git)
-
-    pushd "${STAGING_AREA}" >/dev/null 2>&1
-    git clone "${SOURCEURL}"
-    pushd "${BASENAME}" >/dev/null 2>&1
-    [[ -z "$TAG" ]] && TAG=$(git describe --abbrev=0 --tags)
-
-    logging_info "sourceurl: $SOURCEURL"
-    logging_info "basename: $BASENAME"
-    logging_info "tag: $TAG"
-
-    logging_info "cmnd: git_exp ${SOURCEURL} ${STAGING_AREA}/homesetup/vimbundles $TAG"
-    git_exp "${SOURCEURL}" ${STAGING_AREA}/homesetup/vimbundles $TAG
-    popd
-    rm -rf "${STAGING_AREA}/${BASENAME}"
-    popd
+  popd >/dev/null 2>1
 }
 
 function install_main()
@@ -326,6 +222,8 @@ function install_main()
 
   cat > "${BASEDIR}/main.sh" << 'END'
 #!/bin/bash
+
+set -xv
 
 CURDIR=`pwd`
 TEMPLATE="${HOME}/.installhome.XXXXXXXX"
@@ -353,9 +251,9 @@ mkdir -p "${STAGING_AREA}/.tools"
 mkdir -p "${STAGING_AREA}/.bash"
 mkdir -p "${STAGING_AREA}/.vim/bundle"
 
-tar -zx -C "${STAGING_AREA}/.tools" --strip-components 2  -f packages/$homebin
-tar -zx -C "${STAGING_AREA}/.bash" --strip-components 2  -f packages/$jvzantvoortbashconfig
-tar -zx -C "${STAGING_AREA}/.vim" --strip-components 2  -f packages/$jvzantvoortvimconfig
+tar -zx -C "${STAGING_AREA}/.tools" --strip-components 1  -f packages/$tooling
+tar -zx -C "${STAGING_AREA}/.bash" --strip-components 1  -f packages/$jvzantvoortbashconfig
+tar -zx -C "${STAGING_AREA}/.vim" --strip-components 1  -f packages/$jvzantvoortvimconfig
 
 pushd "${STAGING_AREA}/.vim/bundle"
 for ind in "${VIMBUNDLES[@]}"
@@ -364,7 +262,17 @@ do
 done
 popd
 
-echo $@
+case $1 in
+  install)
+    echo "rsync -av \"${STAGING_AREA}/.tools/\" \"${HOME}/.tools/\""
+    echo "rsync -av \"${STAGING_AREA}/.bash/\" \"${HOME}/.bash/\""
+    echo "rsync -av \"${STAGING_AREA}/.vim/\" \"${HOME}/.vim/\""
+    ;;
+  list)
+    find "${STAGING_AREA}" -type f
+
+    ;;
+esac
 END
   chmod 755 "${BASEDIR}/main.sh"
 
@@ -422,7 +330,7 @@ gitexport --url "https://github.com/jvzantvoort/homebin.git" \
           --vartype "packages" \
           --tag "HEAD" 
 
-popd 
+popd >/dev/null 2>1
 
 for ind in "${VIMBUNDLES[@]}"
 do
@@ -440,8 +348,8 @@ install_main "${STAGING_AREA}/homesetup"
 
 echo "${STAGING_AREA}"
 pushd "${STAGING_AREA}" >/dev/null 2>&1
-$MAKESELF homesetup homesetup.bin homesetup ./main.sh
-popd
+$MAKESELF homesetup "${CONST_CWD}/homesetup.bin" homesetup ./main.sh
+popd >/dev/null 2>1
 
 script_exit "end"
 #------------------------------------------------------------------------------#
