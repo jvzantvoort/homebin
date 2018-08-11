@@ -1,6 +1,6 @@
 Summary: homebin
 Name: homebin
-Version: 0.0.4
+Version: 0.0.5
 Release: 1
 Source0: %{name}-%{version}.tar.gz
 License: MIT
@@ -81,6 +81,9 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
+* Sat Aug 11 2018 John van Zantvoort <john@vanzantvoort.org> 0.0.5-1
+- minor fix (john@vanzantvoort.org)
+
 * Sat Aug 11 2018 John van Zantvoort <john@vanzantvoort.org> 0.0.4-1
 - add changelog (john@vanzantvoort.org)
 
