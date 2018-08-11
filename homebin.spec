@@ -1,13 +1,8 @@
-%define name homebin
-%define version 0.0.3
-%define unmangled_version 0.0.3
-%define release 1
-
 Summary: homebin
-Name: %{name}
+Name: homebin
 Version: 0.0.4
 Release: %{release}
-Source0: %{name}-%{unmangled_version}.tar.gz
+Source0: %{name}-%{version}.tar.gz
 License: MIT
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
