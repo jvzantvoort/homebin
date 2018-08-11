@@ -1,7 +1,7 @@
 Summary: homebin
 Name: homebin
 Version: 0.0.4
-Release: %{release}
+Release: 1
 Source0: %{name}-%{version}.tar.gz
 License: MIT
 Group: Development/Libraries
