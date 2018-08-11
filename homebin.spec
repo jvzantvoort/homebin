@@ -6,7 +6,7 @@ Source0: %{name}-%{version}.tar.gz
 License: MIT
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-Prefix: %{_prefix}
+Prefix: %{_prefix}/local/%{name}
 BuildArch: noarch
 Vendor: John van Zantvoort <john@vanzantvoort.org>
 Url: http://vanzantvoort.org
@@ -25,46 +25,9 @@ rm -rf $RPM_BUILD_ROOT
 %{__mkdir_p} %{buildroot}%{prefix}/templates
 %{__mkdir_p} %{buildroot}%{_sharedstatedir}/%{name}
 
-
-# ── bin
-#    ├── build_home_setup
-#    ├── center_text
-#    ├── difftree
-#    ├── edit
-#    ├── git2cl
-#    ├── git-fix
-#    ├── glossary
-#    ├── ip2hex
-#    ├── mvx
-#    ├── myterm
-#    ├── purgeemptydirs
-#    ├── resume
-#    ├── resume_screen
-#    ├── resume_tmux
-#    ├── setup_dirs
-#    ├── setup_git
-#    ├── setup_rpmgpg
-#    ├── today
-#    ├── uudecode
-#    ├── vimtmpl
-#    ├── vimtmpl_bash -> vimtmpl
-#    ├── vimtmpl_playbook -> vimtmpl
-#    ├── vimtmpl_python -> vimtmpl
-#    ├── winapg
-#    └── wpylint
-# ── export_homebin.sh
-# ── homebin.spec
-# ── LICENSE
-# ── README.md
-# ── templates
-#    ├── default
-#    │   ├── bash.template
-#    │   ├── playbook.template
-#    │   └── python.template
-#    └── local
-
 cp README.md %{buildroot}%{_sharedstatedir}/%{name}/README.md
-cd bin
+
+pushd bin
 ls -1d * | while read item
 do
   if [ -f $item ]
@@ -72,7 +35,19 @@ do
     %{__install} -v -m 755 $item %{buildroot}%{prefix}/bin/$item
   fi
 done
-cd -
+popd
+
+find templates -type d | while read item
+do
+  %{__mkdir_p} %{buildroot}%{prefix}/$item
+done
+
+find templates -type f | while read item
+do
+  %{__install} -v -m 644 $item %{buildroot}%{prefix}/$item
+done
+
+(cd %{buildroot}; find . -type f | sed -e s/^.// -e /^$/d)  >> INSTALLED_FILES
 
 %clean
 rm -rf $RPM_BUILD_ROOT
