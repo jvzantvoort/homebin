@@ -5,7 +5,7 @@
 
 Summary: homebin
 Name: %{name}
-Version: %{version}
+Version: 0.0.4
 Release: %{release}
 Source0: %{name}-%{unmangled_version}.tar.gz
 License: MIT
@@ -86,3 +86,9 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
+* Sat Aug 11 2018 John van Zantvoort <john@vanzantvoort.org> 0.0.4-1
+- add changelog (john@vanzantvoort.org)
+
+* Sat Aug 11 2018 John van Zantvoort <john@vanzantvoort.org>
+- add changelog (john@vanzantvoort.org)
+
