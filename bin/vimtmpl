@@ -51,36 +51,40 @@ logout = logging.StreamHandler(sys.stderr)
 logout.setFormatter(
         logging.Formatter("line: %(lineno)s %(levelname)s: %(message)s"))
 logger.addHandler(logout)
+SHAREDSTATEDIR = "/var/lib"
 
 class TemplateWorker(object):
+
+    def _append_if_isdir(self, dirname):
+        if dirname.startswith(os.sep):
+            dirname = os.path.expanduser(dirname)
+            dirname = os.path.abspath(dirname)
+
+        if os.path.isabs(dirname):
+            if os.path.isdir(dirname):
+                self.dirnames.append(dirname)
+            else:
+                return
+
+        else:
+            subdirs = dirname.split(os.sep)
+            self._append_if_isdir(os.path.join(self.templatesdir, *subdirs))
+            self._append_if_isdir(os.path.join(self.sharedstatedir, *subdirs))
 
     def __init__(self, executable, *dirnames):
         self.logger = logging.getLogger('vimtmpl')
         self.logger.debug('executable: {0}'.format(executable))
         self.executable = executable
-        self.dirname = 'vimtmpl'
         self.dirnames = list()
         self.templatesdir = os.path.expanduser('~/.tools/templates')
+        self.sharedstatedir = os.path.join(SHAREDSTATEDIR, "homebin", "templates")
 
         for dirname in dirnames:
-            self.logger.debug('dir: {0}'.format(dirname))
-            dirname = os.path.expanduser(dirname)
-            if os.path.isabs(dirname):
-                self.dirnames.append(dirname)
-                continue
+            self._append_if_isdir(dirname)
 
-            if os.sep not in dirname:
-                self.dirnames.append(os.path.join(self.templatesdir, dirname))
-                continue
+        self._append_if_isdir('local')
+        self._append_if_isdir('default')
 
-            _dirnames = dirname.split(os.sep)
-            dirname = os.path.join(self.templatesdir, *_dirnames)
-            self.dirnames.append(dirname)
-        else:
-            self.logger.debug('no extra dirs')
-
-        self.dirnames.append(os.path.expanduser('~/.tools/templates/local'))
-        self.dirnames.append(os.path.expanduser('~/.tools/templates/default'))
 
     def tmpl_path(self, dirn):
         return os.path.join(dirn, self.executable + ".template")

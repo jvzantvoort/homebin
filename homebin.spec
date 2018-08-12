@@ -6,7 +6,7 @@ Source0: %{name}-%{version}.tar.gz
 License: MIT
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-Prefix: %{_prefix}/local/%{name}
+Prefix: %{_prefix}/%{name}
 BuildArch: noarch
 Vendor: John van Zantvoort <john@vanzantvoort.org>
 Url: http://vanzantvoort.org
@@ -22,14 +22,14 @@ homebin
 %install
 rm -rf $RPM_BUILD_ROOT
 %{__mkdir_p} %{buildroot}%{prefix}/bin
-%{__mkdir_p} %{buildroot}%{prefix}/templates
 %{__mkdir_p} %{buildroot}%{_sharedstatedir}/%{name}
-
+%{__mkdir_p} %{buildroot}%{_sharedstatedir}/%{name}/templates
 cp README.md %{buildroot}%{_sharedstatedir}/%{name}/README.md
 
 pushd bin
 ls -1d * | while read item
 do
+  [[ "$item" = "build_home_setup" ]] && continue
   if [ -f $item ]
   then
     %{__install} -v -m 755 $item %{buildroot}%{prefix}/bin/$item
@@ -44,7 +44,7 @@ done
 
 find templates -type f | while read item
 do
-  %{__install} -v -m 644 $item %{buildroot}%{prefix}/$item
+  %{__install} -v -m 644 $item %{buildroot}%{_sharedstatedir}/%{name}/templates/$item
 done
 
 (cd %{buildroot}; find . -type f | sed -e s/^.// -e /^$/d)  >> INSTALLED_FILES
