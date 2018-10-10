@@ -183,10 +183,8 @@ try:
     config = ConfigParser.ConfigParser()
     config.read(os.path.expanduser('~/.vimtmplrc'))
     if config.has_section('user'):
-        if config.has_option('user', 'mailaddress'):
-            argdict['mailaddress'] = config.get('user', 'mailaddress')
-        if config.has_option('user', 'company'):
-            argdict['company'] = config.get('user', 'company')
+        for option in config.options('user'):
+            argdict[option] = config.get('user', option)
     if config.has_section(executable):
         for opt in config.options(executable):
             argdict[opt] = config.get(executable, opt)
