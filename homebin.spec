@@ -23,7 +23,8 @@ homebin
 rm -rf $RPM_BUILD_ROOT
 %{__mkdir_p} %{buildroot}%{prefix}/bin
 %{__mkdir_p} %{buildroot}%{_sharedstatedir}/%{name}
-%{__mkdir_p} %{buildroot}%{_sharedstatedir}/%{name}/templates
+%{__mkdir_p} %{buildroot}%{_sharedstatedir}/%{name}/templates/default
+%{__mkdir_p} %{buildroot}%{_sharedstatedir}/%{name}/templates/local
 cp README.md %{buildroot}%{_sharedstatedir}/%{name}/README.md
 
 pushd bin
@@ -37,15 +38,31 @@ do
 done
 popd
 
+# rhel8 has python3 as base
+%if 0%{?rhel} == 8
+pushd python3
+ls -1d * | while read item
+do
+  if [ -f $item ]
+  then
+    %{__install} -v -m 755 $item %{buildroot}%{prefix}/bin/$item
+  fi
+done
+popd
+%endif
+
+
 find templates -type d | while read item
 do
   %{__mkdir_p} %{buildroot}%{prefix}/$item
 done
 
-find templates -type f | while read item
+pushd templates
+find . -type f | while read item
 do
   %{__install} -v -m 644 $item %{buildroot}%{_sharedstatedir}/%{name}/templates/$item
 done
+popd
 
 (cd %{buildroot}; find . -type f | sed -e s/^.// -e /^$/d)  >> INSTALLED_FILES
 

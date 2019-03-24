@@ -4,3 +4,11 @@
 #
 
 apg -M sNCL -m 12 -x 12 -l
+
+RETV=$?
+
+if [ $RETV = 127 ]
+then
+  echo "apg command not available"
+  echo "try: yum install apg"
+fi

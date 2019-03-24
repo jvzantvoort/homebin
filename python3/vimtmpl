@@ -1,0 +1,222 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals, print_function, division
+#------------------------------------------------------------------------------#
+#                                    vimtmpl                                   #
+#------------------------------------------------------------------------------#
+"""vimtmpl, output or write a template script file
+
+Copyright (c) 2018 John van Zantvoort
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+"""
+
+__author__ = "John van Zantvoort"
+__date__ = "21-Jun-2016"
+
+__license__ = "MIT"
+__version__ = "1.0.1"
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+
+import sys
+import os
+import string
+from time import localtime, gmtime, strftime
+import argparse
+import pwd
+import pprint
+import re
+try:
+    import ConfigParser as configparser
+except ModuleNotFoundError:
+    import configparser
+import logging
+
+logger = logging.getLogger('vimtmpl')
+logger.setLevel(logging.DEBUG)
+logout = logging.StreamHandler(sys.stderr)
+logout.setFormatter(
+        logging.Formatter("line: %(lineno)s %(levelname)s: %(message)s"))
+logger.addHandler(logout)
+SHAREDSTATEDIR = "/var/lib"
+
+class TemplateWorker(object):
+
+    def _append_if_isdir(self, dirname):
+        if dirname.startswith(os.sep):
+            dirname = os.path.expanduser(dirname)
+            dirname = os.path.abspath(dirname)
+
+        if os.path.isabs(dirname):
+            if os.path.isdir(dirname):
+                self.dirnames.append(dirname)
+            else:
+                return
+
+        else:
+            subdirs = dirname.split(os.sep)
+            self._append_if_isdir(os.path.join(self.templatesdir, *subdirs))
+            self._append_if_isdir(os.path.join(self.sharedstatedir, *subdirs))
+
+    def __init__(self, executable, *dirnames):
+        self.logger = logging.getLogger('vimtmpl')
+        self.logger.debug('executable: {0}'.format(executable))
+        self.executable = executable
+        self.dirnames = list()
+        self.templatesdir = os.path.expanduser('~/.tools/templates')
+        self.sharedstatedir = os.path.join(SHAREDSTATEDIR, "homebin", "templates")
+
+        for dirname in dirnames:
+            self._append_if_isdir(dirname)
+
+        self._append_if_isdir('local')
+        self._append_if_isdir('default')
+
+
+    def tmpl_path(self, dirn):
+        return os.path.join(dirn, self.executable + ".template")
+
+    def has_template(self, dirn):
+        if os.path.exists(self.tmpl_path(dirn)):
+            return True
+        return False
+
+    def get_template(self):
+        for x in self.dirnames:
+            if self.has_template(x):
+                self.logger.debug("found template in {0}".format(x))
+                return string.Template(open(self.tmpl_path(x)).read())
+            else:
+                self.logger.debug("no template in {0}".format(x))
+
+    def __call__(self, **kwargs):
+        data = self.get_template()
+        info = dict()
+        for k, v in kwargs.items():
+            info[k] = v
+        info['date'] = strftime('%d-%b-%Y',localtime())
+        info['year'] = strftime('%Y',localtime())
+        info['user'] = pwd.getpwuid(os.getuid()).pw_gecos
+        info['username'] = pwd.getpwuid(os.getuid()).pw_name
+        try:
+            scripttext = data.safe_substitute(info)
+        except AttributeError:
+            scripttext = 'Error: have no template data for {0}'.format(self.executable)
+            self.logger.error(scripttext)
+        return scripttext
+
+def parse_args(args):
+    """
+    Parse command line parameters
+
+    :param args: command line parameters as list of strings
+    :return: command line parameters as :obj:`argparse.Namespace`
+    """
+    retv = dict()
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        '--version',
+        action='version',
+        version='$scriptname {ver}'.format(ver=__version__))
+
+    parser.add_argument(
+        '-w',
+        '--write',
+        action='store_true',
+        help="write the file")
+
+    parser.add_argument(
+        '-d',
+        '--description',
+        help="description of the script")
+
+    parser.add_argument(
+        '-t',
+        '--templates',
+        dest='tdirs',
+        action='append',
+        help="location of the templates")
+
+    parser.add_argument('scriptpath', nargs='*')
+
+    opts = vars(parser.parse_args(args))
+
+    for keyn, keyv in opts.items():
+        if keyv is not None:
+            retv[keyn] = keyv
+
+    retv['scriptpath'] = " ".join(retv['scriptpath'])
+    retv['scriptname'] = os.path.basename(retv['scriptpath'])
+    if 'write' not in retv:
+        retv['write'] = False
+
+    return retv
+
+def write(args, content):
+    filepath = args['scriptpath']
+
+    if os.path.exists(filepath):
+        errmsg = 'file {0} already exists'.format(filepath)
+        raise IOError(17, errmsg)
+
+    ofh = open(filepath, 'w')
+    ofh.write(content)
+    ofh.close()
+    os.chmod(filepath, 492)
+
+argdict = parse_args(sys.argv[1:])
+
+executable = re.sub(r'^.*vimtmpl_', '', sys.argv[0])
+
+try:
+    config = configparser.ConfigParser()
+    config.read(os.path.expanduser('~/.vimtmplrc'))
+    if config.has_section('user'):
+        for option in config.options('user'):
+            argdict[option] = config.get('user', option)
+    if config.has_section(executable):
+        for opt in config.options(executable):
+            argdict[opt] = config.get(executable, opt)
+
+except:
+    pass
+
+tdirs = list()
+if 'tdirs' in argdict:
+    tdirs = argdict['tdirs']
+
+tmpl = TemplateWorker(executable, *tdirs)
+
+if argdict['write']:
+    try:
+        write(argdict, tmpl(**argdict))
+    except IOError as ioerr:
+        ioerrno = ioerr[0]
+        ioerrmsg = ioerr[1]
+        if ioerrno in [13]:
+            logger.error("%s on %s" % (ioerrmsg, argdict['scriptpath']))
+        else:
+            logger.error(ioerrmsg)
+        sys.exit(ioerrno)
+
+else:
+    print(tmpl(**argdict))
