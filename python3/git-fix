@@ -509,7 +509,7 @@ def main(args):
     command = ['git', 'commit', "-m", excuse] + targets
     cmd = subprocess.Popen(command, stdout=subprocess.PIPE)
     output = cmd.communicate()
-    print(output[0])
+    print("%s" % output[0])
     if output[1] is not None:
         print("Error")
         print(output[1])
