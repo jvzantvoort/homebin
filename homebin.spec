@@ -1,6 +1,6 @@
 Summary: homebin
 Name: homebin
-Version: 0.0.7
+Version: 0.0.8
 Release: 1
 Source0: %{name}-%{version}.tar.gz
 License: MIT
@@ -73,6 +73,12 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
+* Sun Mar 24 2019 John van Zantvoort <john@vanzantvoort.org> 0.0.8-1
+- update for rhel8 (john@vanzantvoort.org)
+- Several changes (john@vanzantvoort.org)
+- adopted config options for .vimtmplrc (john@vanzantvoort.org)
+- added license (john@vanzantvoort.org)
+
 * Sun Aug 12 2018 John van Zantvoort <john@vanzantvoort.org> 0.0.7-1
 - minor update (john@vanzantvoort.org)
 
