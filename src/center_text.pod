@@ -1,0 +1,12 @@
+=head1 NAME
+
+center_text - center the text given on stdin
+
+=head1 SYNOPSIS
+
+ echo Foo | center_text
+
+=head1 DESCRIPTION
+
+Takes given text stream and centers this on a 80 character wide line.
+

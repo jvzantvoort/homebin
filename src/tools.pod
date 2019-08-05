@@ -1,0 +1,126 @@
+=head1 NAME
+
+build_home_setup, center_text, difftree, edit, git2cl, git-fix, glossary,
+ip2hex, mvx, myterm, purgeemptydirs, resume, resume_screen, resume_tmux,
+setup_dirs, setup_git, setup_rpmgpg, today, uudecode, vimtmpl, vimtmpl_bash,
+vimtmpl_go, vimtmpl_playbook, vimtmpl_python, winapg, wpylint
+
+=head1 TOOLS
+
+=over 8
+
+=item B<build_home_setup>
+
+TBD
+
+=item B<center_text>
+
+Takes given text stream and centers this on a 80 character wide line.
+
+Example:
+
+  echo Foo | center_text
+
+
+=item B<difftree>
+
+Compares two directory trees on structure.
+
+
+=item B<git2cl>
+
+TBD
+
+=item B<git-fix>
+
+TBD
+
+=item B<glossary>
+
+TBD
+
+=item B<ip2hex>
+
+TBD
+
+=item B<mvx>
+
+TBD
+
+=item B<myterm>
+
+TBD
+
+=item B<purgeemptydirs>
+
+TBD
+
+=item B<resume>
+
+TBD
+
+=item B<resume_screen>
+
+TBD
+
+=item B<resume_tmux>
+
+TBD
+
+=item B<setup_dirs>
+
+TBD
+
+=item B<setup_git>
+
+TBD
+
+=item B<setup_rpmgpg>
+
+TBD
+
+=item B<today>
+
+Prints the currennt day in wkB<YYVV.U> format. That is year, ISO 8601 week
+number and day of the week (range 1 to 7, Monday being 1).
+
+
+=item B<uudecode>
+
+TBD
+
+=item B<vimtmpl>
+
+TBD
+
+=item B<vimtmpl_bash>
+
+TBD
+
+=item B<vimtmpl_go>
+
+TBD
+
+=item B<vimtmpl_playbook>
+
+TBD
+
+=item B<vimtmpl_python>
+
+TBD
+
+
+=item B<winapg>
+
+Simple wrapper for the C<apg> command to generate windows compatible passwords
+
+=item B<wpylint>
+
+TBD
+
+
+=back
+
+=head1 SEE ALSO
+
+L<apg(1)>

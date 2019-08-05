@@ -90,6 +90,18 @@ function pathmunge()
   fi
 }
 
+function current_config()
+{
+  
+  printf "GROUPID=\"%s\"\n" $(id -g)
+  printf "GROUPNAME=\"%s\"\n" $(id -gn)
+  printf "USERID=\"%s\"\n" $(id -u)
+  printf "USERNAME=\"%s\"\n" $(id -un)
+  printf "USERGCOS=\"%s\"\n" "$(getent passwd $(id -un)|cut -d\: -f5)"
+  printf "USERHOMEDIR=\"%s\"\n" "$(getent passwd $(id -un)|cut -d\: -f6)"
+  printf "USERSHELL=\"%s\"\n" "$(getent passwd $(id -un)|cut -d\: -f7)"
+}
+
 function mkstaging_area()
 # ------------------------------------------------------------------------------
 #         NAME:  mkstaging_area
@@ -231,6 +243,15 @@ STAGING_AREA=$(mktemp -d ${TEMPLATE})
 [[ -z "$STAGING_AREA" ]] && exit 1
 
 END
+
+  printf "GROUPID=\"%s\"\n"     "${GROUPID}"     >> "${BASEDIR}/main.sh"
+  printf "GROUPNAME=\"%s\"\n"   "${GROUPNAME}"   >> "${BASEDIR}/main.sh"
+  printf "USERID=\"%s\"\n"      "${USERID}"      >> "${BASEDIR}/main.sh"
+  printf "USERNAME=\"%s\"\n"    "${USERNAME}"    >> "${BASEDIR}/main.sh"
+  printf "USERGCOS=\"%s\"\n"    "${USERGCOS}"    >> "${BASEDIR}/main.sh"
+  printf "USERHOMEDIR=\"%s\"\n" "${USERHOMEDIR}" >> "${BASEDIR}/main.sh"
+  printf "USERSHELL=\"%s\"\n"   "${USERSHELL}"   >> "${BASEDIR}/main.sh"
+
   if [ -f "${STAGING_AREA}/packages.sh" ]
   then
     cat "${STAGING_AREA}/packages.sh" >> "${BASEDIR}/main.sh"
@@ -301,6 +322,14 @@ then
 else
   script_exit "don't have makeself" 1
 fi
+
+G_CONFIGFILE=$1; shift
+
+[[ -z "${G_CONFIGFILE}" ]] && G_CONFIGFILE="${HOME}/.${CONST_SCRIPTNAME}"
+
+[[ -f "${G_CONFIGFILE}" ]] || current_config > ${G_CONFIGFILE}
+
+source "${G_CONFIGFILE}"
 
 mkstaging_area
 

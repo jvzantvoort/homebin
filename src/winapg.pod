@@ -1,0 +1,15 @@
+=head1 NAME
+
+winapg - generate windows passwords
+
+=head1 SYNOPSIS
+
+ winapg
+
+=head1 DESCRIPTION
+
+Simple wrapper for the C<apg> command to generate windows compatible passwords
+
+=head1 SEE ALSO
+
+L<apg(1)>

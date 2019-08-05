@@ -1,0 +1,15 @@
+=head1 NAME
+
+today - simple command to give a day base timestamp
+
+=head1 SYNOPSIS
+
+ today
+
+=head1 DESCRIPTION
+
+This command returns the currennt day in wkB<YYVV.U> format. That is year, ISO 8601 week number and day of the week (range 1 to 7, Monday being 1).
+
+=head1 SEE ALSO
+
+L<strftime(1)>
