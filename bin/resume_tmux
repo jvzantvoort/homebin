@@ -90,8 +90,14 @@ function __description()
 {
   local name=$1; shift
   local target="${CONST_CONFDIR}/${name}.rc"
-  [[ -e "${target}" ]] || return
   grep "#\ *DESCRIPTION:" $target |sed 's,^.*DESCRIPTION:\ *,,'
+}
+
+function __workdir()
+{
+  local name=$1; shift
+  local target="${CONST_CONFDIR}/${name}.rc"
+  grep "#\ *WORKDIR:" $target |sed 's,^.*WORKDIR:\ *,,'
 }
 
 function list_sessions()
@@ -111,8 +117,9 @@ function list_sessions()
   do
     estr=${SESSIONS[$element]}
     description=$(__description $estr)
+    workdir=$(__workdir $estr)
     __in "$estr" "${SESSION_LIST[@]}" || continue
-    printf "   * %-12s %s\n" "$estr" "$description"
+    printf "   * %-12s %-42s %s\n" "$estr" "$description" "$workdir"
   done
 
   for element in $(seq 0 $((${#SESSIONS[@]} - 1)))
@@ -120,7 +127,8 @@ function list_sessions()
     estr=${SESSIONS[$element]}
     __in "$estr" "${SESSION_LIST[@]}" && continue
     description=$(__description $estr)
-    printf "     %-12s %s\n" "$estr" "$description"
+    workdir=$(__workdir $estr)
+    printf "     %-12s %-42s %s\n" "$estr" "$description" "$workdir"
   done
 }
 
