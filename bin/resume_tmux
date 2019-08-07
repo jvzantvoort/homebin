@@ -86,6 +86,14 @@ function __in()
   return 1
 }
 
+function __description()
+{
+  local name=$1; shift
+  local target="${CONST_CONFDIR}/${name}.rc"
+  [[ -e "${target}" ]] || return
+  grep "#\ *DESCRIPTION:" $target |sed 's,^.*DESCRIPTION:\ *,,'
+}
+
 function list_sessions()
 {
 
@@ -95,22 +103,24 @@ function list_sessions()
     itemname=$(basename $itemname)
     itemname=$(basename $itemname .rc)
     SESSIONS[${#SESSIONS[*]}]=$itemname
-  done <<< "$(ls -1d ${CONST_CONFDIR}/*.rc|sort)"
+  done <<< "$(ls -1d ${CONST_CONFDIR}/*.rc|sort|grep -v "common")"
 
   SESSION_LIST=$(__ls)
 
   for element in $(seq 0 $((${#SESSIONS[@]} - 1)))
   do
     estr=${SESSIONS[$element]}
+    description=$(__description $estr)
     __in "$estr" "${SESSION_LIST[@]}" || continue
-    echo " *  $estr"
+    printf "   * %-12s %s\n" "$estr" "$description"
   done
 
   for element in $(seq 0 $((${#SESSIONS[@]} - 1)))
   do
     estr=${SESSIONS[$element]}
     __in "$estr" "${SESSION_LIST[@]}" && continue
-    echo "    $estr"
+    description=$(__description $estr)
+    printf "     %-12s %s\n" "$estr" "$description"
   done
 }
 
