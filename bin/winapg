@@ -2,8 +2,27 @@
 #
 # generate windows passwords
 #
+# In general, passwords should be:
+#
+# * Longer than 12 characters
+# * Start with caps
+# * Include at least 1 special character 
+# * And for SAP it should be different than your last 24 passwords
 
-apg -M sNCL -m 12 -x 12 -l
+COMMAND="apg"
+COMMAND="${COMMAND} -m 13" # minimal password length
+COMMAND="${COMMAND} -x 14" # maximal password length
+COMMAND="${COMMAND} -l "   # spell generated passwords
+COMMAND="${COMMAND} -M "
+COMMAND="${COMMAND}S"      # must use special symbol
+COMMAND="${COMMAND}N"      # must use special symbol
+COMMAND="${COMMAND}C"      # must use special symbol
+COMMAND="${COMMAND}L"      # must use special symbol
+
+
+
+# apg -M sNCL -m 12 -x 12 -l
+$COMMAND
 
 RETV=$?
 
