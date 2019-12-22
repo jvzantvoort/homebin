@@ -1,6 +1,6 @@
 Summary: homebin
 Name: homebin
-Version: 0.0.10
+Version: 0.0.11
 Release: 1
 Source0: %{name}-%{version}.tar.gz
 License: MIT
@@ -73,6 +73,14 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
+* Sun Dec 22 2019 John van Zantvoort <john@vanzantvoort.org> 0.0.11-1
+- fixed to meet new password requirements
+- allow vimtmpl to open an editor after creation
+- added pythonclass
+- added workdir in listing output
+- extract description from rc and print it in listing
+- update for transport
+
 * Wed Mar 27 2019 John van Zantvoort <john@vanzantvoort.org> 0.0.10-1
 - Added rhe8 python3 code
 
