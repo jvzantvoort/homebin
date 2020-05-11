@@ -1,0 +1,88 @@
+#!/bin/bash
+#===============================================================================
+#
+#         FILE:  {{ scriptname }}
+#
+#        USAGE:  {{ scriptname }}
+#
+#  DESCRIPTION:  {{ description }}
+#
+#      OPTIONS:  ---
+# REQUIREMENTS:  ---
+#         BUGS:  ---
+#        NOTES:  ---
+#       AUTHOR:  {{ user }} ({{ username }}), {{ mailaddress }}
+#      COMPANY:  {{ company }}
+#      CREATED:  {{ now | strftime("%Y-%m-%d") }}
+#
+# Copyright (C) {{ now | strftime("%Y") }} {{ copyright }}
+#
+#===============================================================================
+readonly CONST_SCRIPTPATH="$(readlink -f $0)"
+readonly CONST_SCRIPTNAME="$(basename $CONST_SCRIPTPATH .sh)"
+readonly CONST_SCRIPTDIR="$(dirname $CONST_SCRIPTPATH)"
+readonly CONST_FACILITY="local0"
+declare -xr LANG="C"
+
+function logging()
+{
+  local priority="$1"; shift
+  logger -p ${CONST_FACILITY}.${priority} -i -s -t "${CONST_SCRIPTNAME}" -- "${priority} $@"
+}
+
+function logging_err()
+{
+  logging "err" "$@"
+}
+
+function logging_info()
+{
+  logging "info" "$@"
+}
+
+function script_exit()
+{
+  local STRING="$1"
+  local RETV="${2:-0}"
+  if [ "$RETV" = "0" ]
+  then
+    logging_info "$STRING"
+  else
+    logging_err "$STRING"
+  fi
+  exit $RETV
+}
+
+function pathmunge()
+{
+  [ -d "$1" ] || return
+
+  if echo $PATH | grep -E -q "(^|:)$1($|:)"
+  then
+    return
+  fi
+
+  if [ "$2" = "after" ]
+  then
+      PATH=$PATH:$1
+  else
+      PATH=$1:$PATH
+  fi
+}
+
+#------------------------------------------------------------------------------#
+#                                    Main                                      #
+#------------------------------------------------------------------------------#
+
+logging_info "start"
+
+# setup path
+#---------------------------------------
+pathmunge "${HOME}/bin" "after"
+export PATH
+
+
+script_exit "end"
+#------------------------------------------------------------------------------#
+#                                  The End                                     #
+#------------------------------------------------------------------------------#
