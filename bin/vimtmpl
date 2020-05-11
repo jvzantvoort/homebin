@@ -4,7 +4,7 @@
 
 Copyright (c) 2020 John van Zantvoort
 """
-from __future__ import unicode_literals, print_function, division
+from __future__ import unicode_literals, print_function
 
 __author__ = "John van Zantvoort"
 __date__ = "21-Jun-2016"
@@ -76,7 +76,7 @@ class Config(object):
                       "description": None,
                       "license": "MIT",
                       "mailaddress": "unknown@unknown.nl",
-                      'mode': 492,
+                      'mode': 493,
                       'now': timestamp,
                       "scriptpath": None,
                       "username": username,
@@ -155,9 +155,13 @@ class Config(object):
         if self.executable == 'pythonclass':
             self._vars['description'] = "Class for {title}".format(**self._vars)
             self._vars['title'] = title_cols[-1].title()
-            self._vars['scriptpath'] = title_cols[-1] + ".py"
         else:
             self._vars['title'] = " ".join([x.title() for x in title_cols])
+
+        extension = self._vars.get('extension')
+        if extension is not None:
+            if not self._vars['scriptpath'].endswith(extension):
+                self._vars['scriptpath'] += "." + extension
 
         return self._vars
 
@@ -270,7 +274,7 @@ class VimTmpl(object):
         with open(filepath, 'w') as ofh:
             ofh.write(self.render())
 
-        os.chmod(filepath, self.config.get('mode'))
+        os.chmod(filepath, int(self.config.get('mode')))
 
     def edit(self):
         self.write()
