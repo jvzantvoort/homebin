@@ -28,11 +28,11 @@ readonly CONST_FACILITY="local0"
 #------------------------------------------------------------------------------#
 
 echo "Install packages"
-sudo yum -y install wget git
+sudo yum -y install wget git tmux
 
 echo "Setup bashrc"
 git clone https://github.com/jvzantvoort/jvzantvoort-bash-config.git .bash
-./.bash/build/bootstrap.sh -f
+./.bash/build/bootstrap.sh -y
 
 echo "Setup tools"
 git clone https://github.com/jvzantvoort/homebin.git $HOME/.tools
