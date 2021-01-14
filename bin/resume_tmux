@@ -76,7 +76,7 @@ function pathmunge()
 
 function __ls()
 {
-  tmux ls -F '#{session_name}' 2>/dev/null
+  tmux-project list
 }
 
 function __in()
@@ -86,50 +86,9 @@ function __in()
   return 1
 }
 
-function __description()
-{
-  local name=$1; shift
-  local target="${CONST_CONFDIR}/${name}.rc"
-  grep "#\ *DESCRIPTION:" $target |sed 's,^.*DESCRIPTION:\ *,,'
-}
-
-function __workdir()
-{
-  local name=$1; shift
-  local target="${CONST_CONFDIR}/${name}.rc"
-  grep "#\ *WORKDIR:" $target |sed 's,^.*WORKDIR:\ *,,'
-}
-
 function list_sessions()
 {
-
-  while read itemname
-  do
-    [[ -f "$itemname" ]] || continue
-    itemname=$(basename $itemname)
-    itemname=$(basename $itemname .rc)
-    SESSIONS[${#SESSIONS[*]}]=$itemname
-  done <<< "$(ls -1d ${CONST_CONFDIR}/*.rc|sort|grep -v "common")"
-
-  SESSION_LIST=$(__ls)
-
-  for element in $(seq 0 $((${#SESSIONS[@]} - 1)))
-  do
-    estr=${SESSIONS[$element]}
-    description=$(__description $estr)
-    workdir=$(__workdir $estr)
-    __in "$estr" "${SESSION_LIST[@]}" || continue
-    printf "   * %-12s %-42s %s\n" "$estr" "$description" "$workdir"
-  done
-
-  for element in $(seq 0 $((${#SESSIONS[@]} - 1)))
-  do
-    estr=${SESSIONS[$element]}
-    __in "$estr" "${SESSION_LIST[@]}" && continue
-    description=$(__description $estr)
-    workdir=$(__workdir $estr)
-    printf "     %-12s %-42s %s\n" "$estr" "$description" "$workdir"
-  done
+  tmux-project list -f
 }
 
 function tmux_attach()
@@ -156,12 +115,7 @@ case $1 in
   ls|list_sessions) list_sessions; exit ;;
   *) SESSION=$1;
     [[ -z "${SESSION}" ]] && exit 1
-    if __in "$SESSION" $(__ls)
-    then
-      tmux_attach $SESSION
-    else
-      tmux_new $SESSION
-    fi
+    tmux-project resume -n "${SESSION}"
   ;;
 esac
 
