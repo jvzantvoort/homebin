@@ -95,10 +95,14 @@ function askyn()
   local mesg="$1"
   local default="$2"
   local retv
-  local color_start=$(tput -Tansi setaf 6)
-  local color_bold=$(tput bold)
-  local color_end=$(tput -Tansi sgr0)
+  local color_start
+  local color_bold
+  local color_end
   local yn
+
+  color_start=$(tput -Tansi setaf 6)
+  color_bold=$(tput bold)
+  color_end=$(tput -Tansi sgr0)
 
   if [[ "${default}" == "n" ]]
   then
@@ -110,7 +114,7 @@ function askyn()
   while :
   do
     printf "%s%s?%s [%s] > " "${color_start}" "${mesg}" "${color_end}" "${yn}"
-    read ANSWER
+    read -r ANSWER
     [[ -z "${ANSWER}" ]] && ANSWER="${default}"
     case "${ANSWER}" in
       y*|Y*) retv=0; break ;;
@@ -275,6 +279,57 @@ END_OF_BASHRC
 }
 # }}}
 
+# install_golang {{{
+function install_golang()
+{
+  local localpath
+  local envpath
+
+  title "Setup golang support"
+
+  localpath="${HOME}/.bash/local.d"
+  envpath="${localpath}/go.sh"
+
+  which go >/dev/null 2>&1 || return 0
+  __mkdir "${HOME}/.bash/local.d" 755
+
+  cat >> "${envpath}" << 'GOPROFILE'
+[[ "$-" =~ i ]] || return
+
+export GOPATH=$(go env GOPATH)
+export GOBIN="${GOPATH}/bin"
+
+[[ -d "/usr/local/go/bin" ]] || return
+
+PATH="/usr/local/go/bin:$PATH"
+
+[[ -z "${GOBIN}" ]] || PATH="${PATH}:${GOBIN}"
+
+export PATH
+GOPROFILE
+
+  go get github.com/klauspost/asmfmt/cmd/asmfmt@latest
+  go get github.com/go-delve/delve/cmd/dlv@latest
+  go get github.com/kisielk/errcheck@latest
+  go get github.com/davidrjenni/reftools/cmd/fillstruct@master
+  go get github.com/rogpeppe/godef@latest
+  go get golang.org/x/tools/cmd/goimports@master
+  go get golang.org/x/lint/golint@master
+  go get golang.org/x/tools/gopls@latest
+  go get github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+  go get honnef.co/go/tools/cmd/staticcheck@latest
+  go get github.com/fatih/gomodifytags@latest
+  go get golang.org/x/tools/cmd/gorename@master
+  go get github.com/jstemmer/gotags@master
+  go get golang.org/x/tools/cmd/guru@master
+  go get github.com/josharian/impl@master
+  go get honnef.co/go/tools/cmd/keyify@master
+  go get github.com/fatih/motion@latest
+  go get github.com/koron/iferr@master
+  go get golang.org/x/tools/cmd/goimports
+}
+# }}}
+
 #------------------------------------------------------------------------------#
 #                                    Main                                      #
 #------------------------------------------------------------------------------#
@@ -315,6 +370,12 @@ install_center_text
 install_bashrc
 
 install_vimrc
+
+if askyn "Setup golang" "y"
+then
+  install_golang
+fi
+
 
 #------------------------------------------------------------------------------#
 #                                  The End                                     #
