@@ -291,7 +291,7 @@ function install_golang()
   envpath="${localpath}/go.sh"
 
   which go >/dev/null 2>&1 || return 0
-  __mkdir "${HOME}/.bash/local.d" 755
+  __mkdirp "${HOME}/.bash/local.d" 755
 
   cat >> "${envpath}" << 'GOPROFILE'
 [[ "$-" =~ i ]] || return
