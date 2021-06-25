@@ -50,6 +50,7 @@ FOLDERS
 )
 readonly C_CENTER_TEXT="https://github.com/jvzantvoort/center_text/releases/download/center_text-0.0.2/center_text_center_text-0.0.2_linux_amd64.zip"
 
+# logging {{{
 function title()
 {
   local mesg="$1"
@@ -58,7 +59,6 @@ function title()
   tput sgr0
 }
 
-# logging {{{
 function logging()
 {
   local priority="$1"; shift
@@ -122,6 +122,7 @@ function askyn()
 }
 # }}}
 
+# create folders {{{
 function __mkdirp()
 {
   local folderpath="$1"
@@ -163,7 +164,9 @@ function create_folders()
     __mkdirp "${folderpath}" "${mode}"
   done 4< <(echo "${C_FOLDERS}" )
 }
+# }}}
 
+# gitclone {{{
 function gitclone()
 {
 
@@ -185,7 +188,9 @@ function gitclone()
 
   echo "END   ${string}"
 }
+# }}}
 
+# install_center_text {{{
 function install_center_text()
 {
   title "Install center_text"
@@ -215,7 +220,9 @@ function install_center_text()
   chmod 755 "${HOME}/.tools/bin/center_text"
   popd >/dev/null 2>&1 || return 1
 }
+# }}}
 
+# install_vimrc {{{
 function install_vimrc()
 {
   local retv
@@ -248,6 +255,21 @@ function install_vimrc()
   vim +PluginInstall +qall
 
   return "${retv}"
+
+}
+# }}}
+
+function install_bashrc()
+{
+  title "Setup bashrc"
+  if grep -q '/.bash/bashrc.sh' ~/.bashrc
+  then
+    cat >> "${HOME}/.bashrc" << 'END_OF_BASHRC'
+
+# User specific aliases and functions
+[[ -f "${HOME}/.bash/bashrc.sh" ]] && . "${HOME}/.bash/bashrc.sh"
+END_OF_BASHRC
+  fi
 
 }
 
@@ -288,15 +310,7 @@ gitclone "${VIMRC_GIT_URL}" "${HOME}/.vim"
 
 install_center_text
 
-title "Setup bashrc"
-if grep -q '/.bash/bashrc.sh' ~/.bashrc
-then
-  cat >> "${HOME}/.bashrc" << 'END_OF_BASHRC'
-
-# User specific aliases and functions
-[[ -f "${HOME}/.bash/bashrc.sh" ]] && . "${HOME}/.bash/bashrc.sh"
-END_OF_BASHRC
-fi
+install_bashrc
 
 install_vimrc
 
