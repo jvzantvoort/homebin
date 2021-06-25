@@ -259,10 +259,11 @@ function install_vimrc()
 }
 # }}}
 
+# install_bashrc {{{
 function install_bashrc()
 {
   title "Setup bashrc"
-  if grep -q '/.bash/bashrc.sh' ~/.bashrc
+  if ! grep -q '/.bash/bashrc.sh' ~/.bashrc
   then
     cat >> "${HOME}/.bashrc" << 'END_OF_BASHRC'
 
@@ -272,6 +273,7 @@ END_OF_BASHRC
   fi
 
 }
+# }}}
 
 #------------------------------------------------------------------------------#
 #                                    Main                                      #
