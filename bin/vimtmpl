@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """vimtmpl, output or write a template script file
 
@@ -28,26 +28,30 @@ try:
 except ImportError:
     print("Failed to import jinja2")
 
-LOGGER = logging.getLogger('vimtmpl')
+LOGGER = logging.getLogger("vimtmpl")
 LOGGER.setLevel(logging.DEBUG)
 LOGGER_STDOUT = logging.StreamHandler(sys.stderr)
 LOGGER_STDOUT.setFormatter(
-    logging.Formatter("line: %(lineno)s %(levelname)s: %(message)s"))
+    logging.Formatter("line: %(lineno)s %(levelname)s: %(message)s")
+)
 LOGGER.addHandler(LOGGER_STDOUT)
 
-TEMPLATE_DIRS = [os.path.expanduser('~/.tools/templates/local'),
-                 os.path.expanduser('~/.tools/templates/default')]
+TEMPLATE_DIRS = [
+    os.path.expanduser("~/.tools/templates/local"),
+    os.path.expanduser("~/.tools/templates/default"),
+]
+
 
 def filter_strftime(timestr, fmt=None):
     return strftime(fmt, timestr)
 
-class Config(object):
 
+class Config(object):
     def __init__(self, *args):
         self._vars = dict()
-        self._opts = {'write': False, 'edit': False}
-        self.configfile = os.path.expanduser('~/.vimtmplrc')
-        self.logger = logging.getLogger('vimtmpl')
+        self._opts = {"write": False, "edit": False}
+        self.configfile = os.path.expanduser("~/.vimtmplrc")
+        self.logger = logging.getLogger("vimtmpl")
         self._executable = str()
         arguments = list(args)
 
@@ -63,7 +67,7 @@ class Config(object):
 
     @executable.setter
     def executable(self, varn):
-        self._executable = re.sub(r'^.*vimtmpl_', '', varn)
+        self._executable = re.sub(r"^.*vimtmpl_", "", varn)
         return self._executable
 
     def set_defaults(self):
@@ -71,16 +75,18 @@ class Config(object):
         user = pwd.getpwuid(os.getuid()).pw_gecos
         timestamp = localtime()
 
-        self._vars = {"company": "unknown",
-                      "copyright": "user name",
-                      "description": None,
-                      "license": "MIT",
-                      "mailaddress": "unknown@unknown.nl",
-                      'mode': 493,
-                      'now': timestamp,
-                      "scriptpath": None,
-                      "username": username,
-                      "user": user}
+        self._vars = {
+            "company": "unknown",
+            "copyright": "user name",
+            "description": None,
+            "license": "MIT",
+            "mailaddress": "unknown@unknown.nl",
+            "mode": 493,
+            "now": timestamp,
+            "scriptpath": None,
+            "username": username,
+            "user": user,
+        }
         self._vars["executable"] = self.executable
         return self._vars
 
@@ -94,50 +100,58 @@ class Config(object):
         parser = argparse.ArgumentParser()
 
         parser.add_argument(
-            '--version',
-            action='version',
-            version='$scriptname {ver}'.format(ver=__version__))
+            "--version",
+            action="version",
+            version="$scriptname {ver}".format(ver=__version__),
+        )
 
-        parser.add_argument('-w', '--write', dest='write', action='store_true',
-                            help="write the file")
+        parser.add_argument(
+            "-w", "--write", dest="write", action="store_true", help="write the file"
+        )
 
-        parser.add_argument('-e', '--edit', dest='edit', action='store_true',
-                            help="Edit script after creation")
+        parser.add_argument(
+            "-e",
+            "--edit",
+            dest="edit",
+            action="store_true",
+            help="Edit script after creation",
+        )
 
-        parser.add_argument('-d', '--description', dest='description',
-                            help="description of the script")
+        parser.add_argument(
+            "-d", "--description", dest="description", help="description of the script"
+        )
 
-        parser.add_argument('scriptpath', nargs='*')
+        parser.add_argument("scriptpath", nargs="*")
 
         opts = parser.parse_args(args)
 
         if opts.write:
-            self._opts['write'] = True
+            self._opts["write"] = True
 
         if opts.edit:
-            self._opts['edit'] = True
+            self._opts["edit"] = True
 
         if opts.description:
-            self._vars['description'] = opts.description
+            self._vars["description"] = opts.description
 
         if opts.scriptpath:
-            self._vars['scriptpath'] = " ".join(opts.scriptpath)
+            self._vars["scriptpath"] = " ".join(opts.scriptpath)
 
     @property
     def write(self):
-        return self._opts['write']
+        return self._opts["write"]
 
     @property
     def edit(self):
-        return self._opts['edit']
+        return self._opts["edit"]
 
     def readconfig(self):
         config = configparser.ConfigParser()
         config.read(self.configfile)
 
-        if config.has_section('user'):
-            for option in config.options('user'):
-                option_val = config.get('user', option)
+        if config.has_section("user"):
+            for option in config.options("user"):
+                option_val = config.get("user", option)
                 self._vars[option] = option_val
 
         if config.has_section(self.executable):
@@ -146,22 +160,22 @@ class Config(object):
                 self._vars[option] = option_val
 
     def handle_scriptpath(self):
-        self._vars['scriptname'] = os.path.basename(self._vars['scriptpath'])
-        scripttitle = self._vars.get('scriptname', 'notitle')
+        self._vars["scriptname"] = os.path.basename(self._vars["scriptpath"])
+        scripttitle = self._vars.get("scriptname", "notitle")
 
         # remove extensions from the script path
-        self._vars['title'] = re.sub(r"^(.*)\.\w{1,3}$", r"\1", scripttitle)
-        title_cols = self._vars['title'].split('.')
-        if self.executable == 'pythonclass':
-            self._vars['description'] = "Class for {title}".format(**self._vars)
-            self._vars['title'] = title_cols[-1].title()
+        self._vars["title"] = re.sub(r"^(.*)\.\w{1,3}$", r"\1", scripttitle)
+        title_cols = self._vars["title"].split(".")
+        if self.executable == "pythonclass":
+            self._vars["description"] = "Class for {title}".format(**self._vars)
+            self._vars["title"] = title_cols[-1].title()
         else:
-            self._vars['title'] = " ".join([x.title() for x in title_cols])
+            self._vars["title"] = " ".join([x.title() for x in title_cols])
 
-        extension = self._vars.get('extension')
+        extension = self._vars.get("extension")
         if extension is not None:
-            if not self._vars['scriptpath'].endswith(extension):
-                self._vars['scriptpath'] += "." + extension
+            if not self._vars["scriptpath"].endswith(extension):
+                self._vars["scriptpath"] += "." + extension
 
         return self._vars
 
@@ -171,9 +185,8 @@ class Config(object):
 
 
 class Edit(object):
-
     def __init__(self, path):
-        self.logger = logging.getLogger('vimtmpl')
+        self.logger = logging.getLogger("vimtmpl")
         self._path = None
         self._editor = "vim"
         self.edit(path)
@@ -205,13 +218,13 @@ class Edit(object):
     def edit(self, path):
         subprocess.call([self.editor, path])
 
-class VimTmpl(object):
 
+class VimTmpl(object):
     def __init__(self, **kwargs):
-        self.logger = logging.getLogger('vimtmpl')
-        self.executable = re.sub(r'^.*vimtmpl_', '', sys.argv[0])
+        self.logger = logging.getLogger("vimtmpl")
+        self.executable = re.sub(r"^.*vimtmpl_", "", sys.argv[0])
         self.template_name = self.executable + ".j2"
-        self.configfile = os.path.expanduser('~/.vimtmplrc')
+        self.configfile = os.path.expanduser("~/.vimtmplrc")
         self._config = dict()
         self._defaults = dict()
 
@@ -237,10 +250,10 @@ class VimTmpl(object):
         self._defaults["mailaddress"] = "unknown@unknown.nl"
         self._defaults["username"] = pwd.getpwuid(os.getuid()).pw_name
         self._defaults["user"] = pwd.getpwuid(os.getuid()).pw_gecos
-        self._defaults['date'] = strftime('%d-%b-%Y', localtime())
-        self._defaults['cdate'] = strftime('%Y-%m-%d', localtime())
-        self._defaults['year'] = strftime('%Y', localtime())
-        self._defaults['mode'] = 492
+        self._defaults["date"] = strftime("%d-%b-%Y", localtime())
+        self._defaults["cdate"] = strftime("%Y-%m-%d", localtime())
+        self._defaults["year"] = strftime("%Y", localtime())
+        self._defaults["mode"] = 492
 
     @property
     def config(self):
@@ -252,9 +265,9 @@ class VimTmpl(object):
         config = configparser.ConfigParser()
         config.read(self.configfile)
 
-        if config.has_section('user'):
-            for option in config.options('user'):
-                self._config[option] = config.get('user', option)
+        if config.has_section("user"):
+            for option in config.options("user"):
+                self._config[option] = config.get("user", option)
 
         if config.has_section(self.executable):
             for opt in config.options(self.executable):
@@ -265,20 +278,21 @@ class VimTmpl(object):
         return self._environment.get_template(self.template_name).render(self._config)
 
     def write(self):
-        filepath = self.config['scriptpath']
+        filepath = self.config["scriptpath"]
 
         if os.path.exists(filepath):
-            errmsg = 'file {0} already exists'.format(filepath)
+            errmsg = "file {0} already exists".format(filepath)
             raise IOError(17, errmsg)
 
-        with open(filepath, 'w') as ofh:
+        with open(filepath, "w") as ofh:
             ofh.write(self.render())
 
-        os.chmod(filepath, int(self.config.get('mode')))
+        os.chmod(filepath, int(self.config.get("mode")))
 
     def edit(self):
         self.write()
-        Edit(self.config['scriptpath'])
+        Edit(self.config["scriptpath"])
+
 
 def main(args):
     config = Config(*args)

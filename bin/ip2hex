@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 """print the hex version of an ipaddress
 
 Output a hex version of a ipv4 ipaddress usefull for PXE files.
@@ -20,6 +20,7 @@ Example::
 import sys
 import socket
 
+
 def valid_ip(address):
     try:
         socket.inet_aton(address)
@@ -27,11 +28,12 @@ def valid_ip(address):
     except:
         return False
 
+
 for address in sys.argv[1:]:
-    pstr = ''
+    pstr = ""
     if valid_ip(address):
-        for segment in [int(x) for x in address.split('.')]:
+        for segment in [int(x) for x in address.split(".")]:
             pstr += ("%02x" % segment).upper()
     else:
         pstr = address
-    print pstr
+    print(pstr)
