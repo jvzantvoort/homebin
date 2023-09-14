@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """setup_git
 
@@ -17,12 +17,14 @@ __email__ = "John@vanZantvoort.org"
 __license__ = "MIT"
 __version__ = "0.1"
 
-configfile = os.path.expanduser('~/.gitconfig')
+configfile = os.path.expanduser("~/.gitconfig")
+
 
 def setopt(data, section, option, optvalue):
     data[section] = data.get(section, {})
     data[section][option] = data[section].get(option, optvalue)
     return data
+
 
 def readconfig():
     retv = {}
@@ -35,39 +37,52 @@ def readconfig():
             for option in config.options(section):
                 retv = setopt(retv, section, option, config.get(section, option))
 
-    lg  = """log --graph --pretty=format:'%Cred%h%Creset """
+    lg = """log --graph --pretty=format:'%Cred%h%Creset """
     lg += """-%C(yellow)%d%Creset %s %Cgreen(%cr) """
     lg += """%C(bold blue)<%an>%Creset' --abbrev-commit """
-    lg += '--date=relative'
+    lg += "--date=relative"
 
-    retv = setopt(retv, 'color', 'ui', 'true')
-    retv = setopt(retv, 'color "branch"', 'current', 'yellow reverse')
-    retv = setopt(retv, 'color "branch"', 'local', 'yellow')
-    retv = setopt(retv, 'color "branch"', 'remote', 'green')
-    retv = setopt(retv, 'color "diff"', 'frag', 'magenta bold')
-    retv = setopt(retv, 'color "diff"', 'meta', 'yellow bold')
-    retv = setopt(retv, 'color "diff"', 'new', 'green bold')
-    retv = setopt(retv, 'color "diff"', 'old', 'red bold')
-    retv = setopt(retv, 'color "status"', 'added', 'yellow')
-    retv = setopt(retv, 'color "status"', 'changed', 'green')
-    retv = setopt(retv, 'color "status"', 'untracked', 'red')
-    retv = setopt(retv, 'core', 'editor', 'vim')
-    retv = setopt(retv, 'diff', 'tool', 'vimdiff')
-    retv = setopt(retv, 'difftool', 'prompt', 'false')
-    retv = setopt(retv, 'merge', 'tool', 'vimdiff')
-    retv = setopt(retv, 'alias', 'br', 'branch -av')
-    retv = setopt(retv, 'alias', 'brname', """!git branch | grep "^*" | awk '{ print $2 }'""")
-    retv = setopt(retv, 'alias', 'ci', 'commit')
-    retv = setopt(retv, 'alias', 'co', 'checkout')
-    retv = setopt(retv, 'alias', 'd', 'difftool')
-    retv = setopt(retv, 'alias', 'sr', 'diff remotes/origin/master..origin/master')
-    retv = setopt(retv, 'alias', 'st', 'status -s')
-    retv = setopt(retv, 'alias', 'lg', lg)
+    retv = setopt(retv, "color", "ui", "true")
+    retv = setopt(retv, 'color "branch"', "current", "yellow reverse")
+    retv = setopt(retv, 'color "branch"', "local", "yellow")
+    retv = setopt(retv, 'color "branch"', "remote", "green")
+    retv = setopt(retv, 'color "diff"', "frag", "magenta bold")
+    retv = setopt(retv, 'color "diff"', "meta", "yellow bold")
+    retv = setopt(retv, 'color "diff"', "new", "green bold")
+    retv = setopt(retv, 'color "diff"', "old", "red bold")
+    retv = setopt(retv, 'color "status"', "added", "yellow")
+    retv = setopt(retv, 'color "status"', "changed", "green")
+    retv = setopt(retv, 'color "status"', "untracked", "red")
+    retv = setopt(retv, "core", "editor", "vim")
+    retv = setopt(retv, "diff", "tool", "vimdiff")
+    retv = setopt(retv, "difftool", "prompt", "false")
+    retv = setopt(retv, "merge", "tool", "vimdiff")
+    retv = setopt(retv, "alias", "br", "branch -av")
+    retv = setopt(
+        retv, "alias", "brname", """!git branch | grep "^*" | awk '{ print $2 }'"""
+    )
+    retv = setopt(retv, "alias", "ci", "commit")
+    retv = setopt(retv, "alias", "co", "checkout")
+    retv = setopt(retv, "alias", "d", "difftool")
+    retv = setopt(retv, "alias", "sr", "diff remotes/origin/master..origin/master")
+    retv = setopt(retv, "alias", "st", "status -s")
+    retv = setopt(retv, "alias", "lg", lg)
     return retv
 
+
 def writeconfig(configdata):
-    legend = ['user', 'color', 'color "branch"', 'color "diff"',
-              'color "status"', 'core', 'diff', 'difftool', 'merge', 'alias']
+    legend = [
+        "user",
+        "color",
+        'color "branch"',
+        'color "diff"',
+        'color "status"',
+        "core",
+        "diff",
+        "difftool",
+        "merge",
+        "alias",
+    ]
 
     sectionlist = list()
     for section in legend:
@@ -92,9 +107,11 @@ def writeconfig(configdata):
 
     ofh.close()
 
+
 def main(args):
     configdata = readconfig()
     writeconfig(configdata)
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])

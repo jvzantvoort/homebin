@@ -17,7 +17,8 @@ declare -r CONST_FACILITY="local0"
 # --------------------------------------
 # VARIABLES
 # --------------------------------------
-SESSION=${1:-default}
+#SESSION=${1:-default}
+SESSION=${1}
 OPTS="-S $SESSION"
 
 # --------------------------------------

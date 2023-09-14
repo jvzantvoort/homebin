@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """glossary - I got tired manually maintaining glossary lists
 
@@ -57,18 +57,24 @@ __email__ = "John@vanZantvoort.org"
 __license__ = "none"
 __version__ = "1.0.1"
 
+
 def list_glossary_items(glossary_dir):
     return [x[:-4] for x in os.listdir(glossary_dir)]
+
 
 def edit(glossary_dir, itemname):
     itemname = itemname.lower()
     outputfile = os.path.join(glossary_dir, itemname + ".rst")
-    subprocess.call(['/usr/bin/vim', outputfile])
+    subprocess.call(["/usr/bin/vim", outputfile])
+
 
 def wrap_and_print_line(inputline):
-    wrapper = textwrap.TextWrapper(initial_indent="      ", subsequent_indent="      ", width=80)
+    wrapper = textwrap.TextWrapper(
+        initial_indent="      ", subsequent_indent="      ", width=80
+    )
     for line in wrapper.wrap(inputline):
-        print line
+        print(line)
+
 
 def generate_glossary(glossary_dir, item):
     terms = list()
@@ -84,10 +90,11 @@ def generate_glossary(glossary_dir, item):
         lines.append(line)
 
     for term in sorted(terms):
-        print "   %s" % term
+        print("   %s" % term)
         for line in lines:
             wrap_and_print_line(line)
-        print ""
+        print("")
+
 
 def parse_args(args):
     """
@@ -100,45 +107,50 @@ def parse_args(args):
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        '--version',
-        action='version',
-        version='glossary {ver}'.format(ver=__version__))
+        "--version", action="version", version="glossary {ver}".format(ver=__version__)
+    )
 
     parser.add_argument(
-            '-s', '--set',
-            dest="SET",
-            action="store_true",
-            help="set the location of the archive")
+        "-s",
+        "--set",
+        dest="SET",
+        action="store_true",
+        help="set the location of the archive",
+    )
 
     parser.add_argument(
-            '-l', '--list',
-            dest="LIST",
-            action="store_true",
-            help="list the contentse of the archive")
+        "-l",
+        "--list",
+        dest="LIST",
+        action="store_true",
+        help="list the contentse of the archive",
+    )
 
     parser.add_argument(
-            '-a', '--add',
-            dest="ADD",
-            action="store_true",
-            help="add an argument")
+        "-a", "--add", dest="ADD", action="store_true", help="add an argument"
+    )
 
     parser.add_argument(
-            '-e', '--edit',
-            dest="EDIT",
-            action="store_true",
-            help="edit an argument")
+        "-e", "--edit", dest="EDIT", action="store_true", help="edit an argument"
+    )
 
     parser.add_argument(
-            '-g', '--generate',
-            dest="GENERATE", action="store_true", help="generate glossary")
+        "-g",
+        "--generate",
+        dest="GENERATE",
+        action="store_true",
+        help="generate glossary",
+    )
 
     parser.add_argument(
-            '-i', '--init',
-            dest="INIT", action="store_true",
-            help="initialize a glossary repository")
+        "-i",
+        "--init",
+        dest="INIT",
+        action="store_true",
+        help="initialize a glossary repository",
+    )
 
-    parser.add_argument('option', nargs='*')
-
+    parser.add_argument("option", nargs="*")
 
     opts = vars(parser.parse_args(args))
 
@@ -151,37 +163,36 @@ def parse_args(args):
 
 def main(args):
     args = parse_args(args)
-    do_set = args.get('SET', False)
-    do_init = args.get('INIT', False)
-    do_add = args.get('ADD', False)
-    do_edit = args.get('EDIT', False)
-    do_list = args.get('LIST', False)
-    do_generate = args.get('GENERATE', False)
-    rest = args.get('option', [])
-
+    do_set = args.get("SET", False)
+    do_init = args.get("INIT", False)
+    do_add = args.get("ADD", False)
+    do_edit = args.get("EDIT", False)
+    do_list = args.get("LIST", False)
+    do_generate = args.get("GENERATE", False)
+    rest = args.get("option", [])
 
     glossary_dir = str()
     try:
-        glossary_dir = open(os.path.expanduser('~/.glossary')).read().strip('\n').strip()
+        glossary_dir = (
+            open(os.path.expanduser("~/.glossary")).read().strip("\n").strip()
+        )
 
     except IOError:
-        glossary_dir = os.path.expanduser('~/glossary')
+        glossary_dir = os.path.expanduser("~/glossary")
 
     if do_set:
-
         try:
             glossary_dir = rest.pop(0)
 
         except IndexError:
             sys.exit("set needs an argument")
 
-        with open(os.path.expanduser('~/.glossary'), 'w') as ofh:
+        with open(os.path.expanduser("~/.glossary"), "w") as ofh:
             ofh.write(glossary_dir)
 
         return
 
     if do_init:
-
         try:
             os.makedirs(glossary_dir)
 
@@ -195,13 +206,14 @@ def main(args):
 
     if do_list:
         for item in list_glossary_items(glossary_dir):
-            print item
+            print(item)
     if do_generate:
-        print "Glossary"
-        print "========\n"
-        print ".. glossary::\n"
+        print("Glossary")
+        print("========\n")
+        print(".. glossary::\n")
         for item in sorted(list_glossary_items(glossary_dir)):
             generate_glossary(glossary_dir, item)
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])

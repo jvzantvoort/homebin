@@ -9,17 +9,18 @@
 # * Include at least 1 special character 
 # * And for SAP it should be different than your last 24 passwords
 
+
+
+
 COMMAND="apg"
-COMMAND="${COMMAND} -m 13" # minimal password length
-COMMAND="${COMMAND} -x 14" # maximal password length
+COMMAND="${COMMAND} -m 15" # minimal password length
+COMMAND="${COMMAND} -x 16" # maximal password length
 COMMAND="${COMMAND} -l "   # spell generated passwords
 COMMAND="${COMMAND} -M "
-COMMAND="${COMMAND}S"      # must use special symbol
-COMMAND="${COMMAND}N"      # must use special symbol
-COMMAND="${COMMAND}C"      # must use special symbol
-COMMAND="${COMMAND}L"      # must use special symbol
-
-
+COMMAND="${COMMAND}S"      # special symbol
+COMMAND="${COMMAND}N"      # numeral symbol
+COMMAND="${COMMAND}C"      # capital symbol
+COMMAND="${COMMAND}L"      # small letters symbol
 
 # apg -M sNCL -m 12 -x 12 -l
 $COMMAND
@@ -31,3 +32,4 @@ then
   echo "apg command not available"
   echo "try: yum install apg"
 fi
+
